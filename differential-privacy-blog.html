@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Differential Privacy in Data Mining | Blog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:    #0d1b2a;
+      --teal:    #1b9aaa;
+      --teal-lt: #c8eef2;
+      --accent:  #f4a261;
+      --cream:   #faf7f2;
+      --ink:     #1a1a2e;
+      --muted:   #6b7280;
+      --border:  #e5e7eb;
+      --white:   #ffffff;
+      --code-bg: #0d1b2a;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--cream);
+      color: var(--ink);
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 18px;
+      line-height: 1.8;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── PROGRESS BAR ── */
+    #progress-bar {
+      position: fixed; top: 0; left: 0; height: 3px;
+      background: linear-gradient(90deg, var(--teal), var(--accent));
+      width: 0%; z-index: 999; transition: width 0.1s linear;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(250,247,242,0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem; font-weight: 700;
+      color: var(--navy); text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .nav-links { display: flex; gap: 1.5rem; list-style: none; }
+    .nav-links a {
+      font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--muted); text-decoration: none; font-family: 'JetBrains Mono', monospace;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--teal); }
+
+    /* ── HERO ── */
+    .hero {
+      background: var(--navy);
+      padding: 6rem 2rem 5rem;
+      text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(27,154,170,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block;
+      background: rgba(27,154,170,0.15);
+      border: 1px solid rgba(27,154,170,0.4);
+      color: var(--teal-lt);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; letter-spacing: 0.15em;
+      text-transform: uppercase; padding: 0.35rem 1rem;
+      border-radius: 100px; margin-bottom: 2rem;
+      animation: fadeUp 0.6s ease both;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 6vw, 4.2rem);
+      font-weight: 900;
+      color: var(--white);
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      max-width: 800px; margin: 0 auto 1.5rem;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+    .hero h1 span { color: var(--teal); }
+    .hero-subtitle {
+      font-size: 1.1rem; color: rgba(200,238,242,0.75);
+      max-width: 580px; margin: 0 auto 2.5rem;
+      font-style: italic; font-weight: 300;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+    .hero-meta {
+      display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+    .hero-meta span {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem; color: rgba(200,238,242,0.55);
+      letter-spacing: 0.05em;
+    }
+    .hero-meta span b { color: rgba(200,238,242,0.85); }
+
+    /* ── LAYOUT ── */
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* ── TOC ── */
+    .toc-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--teal);
+      border-radius: 0 12px 12px 0;
+      padding: 1.8rem 2rem;
+      margin: 3.5rem 0;
+    }
+    .toc-card h3 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem; text-transform: uppercase;
+      letter-spacing: 0.12em; color: var(--teal);
+      margin-bottom: 1rem;
+    }
+    .toc-card ol {
+      padding-left: 1.2rem;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1.5rem;
+    }
+    .toc-card li { font-size: 0.9rem; }
+    .toc-card a { color: var(--ink); text-decoration: none; transition: color 0.2s; }
+    .toc-card a:hover { color: var(--teal); }
+
+    /* ── ARTICLE SECTIONS ── */
+    .article { padding: 1rem 0 5rem; }
+
+    section { margin-bottom: 4rem; }
+
+    h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.7rem, 3.5vw, 2.2rem);
+      font-weight: 700;
+      color: var(--navy);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.2rem;
+      scroll-margin-top: 5rem;
+    }
+    h3 {
+      font-family: 'Source Serif 4', serif;
+      font-size: 1.2rem; font-weight: 600;
+      color: var(--navy); margin: 2rem 0 0.8rem;
+    }
+
+    p { margin-bottom: 1.2rem; color: #2d2d3e; }
+
+    strong { color: var(--navy); font-weight: 600; }
+    em { color: var(--muted); }
+
+    a { color: var(--teal); text-decoration: underline; text-decoration-thickness: 1px; }
+    a:hover { text-decoration-thickness: 2px; }
+
+    /* ── CALLOUT BOXES ── */
+    .callout {
+      border-radius: 12px;
+      padding: 1.5rem 1.8rem;
+      margin: 2rem 0;
+      position: relative;
+    }
+    .callout.blue {
+      background: #e8f7fa;
+      border-left: 4px solid var(--teal);
+    }
+    .callout.orange {
+      background: #fff4e8;
+      border-left: 4px solid var(--accent);
+    }
+    .callout.dark {
+      background: var(--navy);
+      color: var(--teal-lt);
+      border-left: 4px solid var(--teal);
+    }
+    .callout .label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem; text-transform: uppercase;
+      letter-spacing: 0.14em; margin-bottom: 0.6rem;
+      opacity: 0.65;
+    }
+    .callout.dark .label { color: var(--teal); opacity: 1; }
+    .callout p { margin-bottom: 0; font-size: 1rem; }
+    .callout.dark p { color: rgba(200,238,242,0.85); }
+
+    /* ── ANALOGY VISUAL ── */
+    .analogy-box {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin: 2rem 0;
+      box-shadow: 0 4px 24px rgba(13,27,42,0.07);
+    }
+    .analogy-box .title-line {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; color: var(--teal);
+      text-transform: uppercase; letter-spacing: 0.14em;
+      margin-bottom: 1.2rem;
+    }
+    .coin-flow {
+      display: flex; align-items: stretch; gap: 0;
+      margin: 0.8rem 0;
+      border-radius: 10px; overflow: hidden;
+    }
+    .coin-step {
+      flex: 1; padding: 1rem 1.2rem; font-size: 0.9rem;
+    }
+    .coin-step .step-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem; text-transform: uppercase;
+      letter-spacing: 0.1em; opacity: 0.6;
+      margin-bottom: 0.3rem;
+    }
+    .coin-step.s1 { background: #e8f7fa; }
+    .coin-step.s2 { background: #d1eff3; }
+    .coin-step.s3 { background: #bae7ed; }
+    .coin-step.result {
+      background: var(--navy); color: var(--teal-lt);
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .coin-step.result .step-label { color: var(--teal); opacity: 1; }
+
+    /* ── EPSILON VISUAL ── */
+    .epsilon-scale {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .eps-card {
+      border-radius: 12px; padding: 1.2rem;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .eps-card.low  { background: #e0f5f0; border: 2px solid #00b894; }
+    .eps-card.mid  { background: #e8f7fa; border: 2px solid var(--teal); }
+    .eps-card.high { background: #fff1e0; border: 2px solid var(--accent); }
+    .eps-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem; font-weight: 600;
+      color: var(--navy); margin-bottom: 0.4rem;
+    }
+    .eps-label { font-size: 0.82rem; color: var(--muted); }
+    .eps-badge {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem; padding: 0.2rem 0.6rem;
+      border-radius: 100px; margin-top: 0.5rem;
+    }
+    .eps-card.low  .eps-badge { background: #00b894; color: white; }
+    .eps-card.mid  .eps-badge { background: var(--teal); color: white; }
+    .eps-card.high .eps-badge { background: var(--accent); color: white; }
+
+    /* ── NOISE STEPS ── */
+    .noise-steps {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 0;
+      border-radius: 12px; overflow: hidden;
+      margin: 1.5rem 0;
+    }
+    .noise-step {
+      padding: 1.2rem 1rem; text-align: center;
+    }
+    .noise-step:nth-child(1) { background: #e8f7fa; }
+    .noise-step:nth-child(2) { background: #d0eff4; }
+    .noise-step:nth-child(3) { background: #b8e6ed; }
+    .noise-step:nth-child(4) { background: var(--navy); color: var(--teal-lt); }
+    .ns-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--teal); color: white;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem; font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 0.6rem;
+    }
+    .noise-step:nth-child(4) .ns-num { background: var(--accent); }
+    .ns-title { font-size: 0.82rem; font-weight: 600; color: var(--navy); margin-bottom: 0.3rem; }
+    .noise-step:nth-child(4) .ns-title { color: var(--teal-lt); }
+    .ns-body { font-size: 0.78rem; color: var(--muted); }
+    .noise-step:nth-child(4) .ns-body { color: rgba(200,238,242,0.7); }
+
+    /* ── COMPARISON TABLE ── */
+    .compare-table {
+      width: 100%; border-collapse: separate; border-spacing: 0;
+      margin: 1.5rem 0; font-size: 0.9rem;
+      border-radius: 12px; overflow: hidden;
+      box-shadow: 0 2px 16px rgba(13,27,42,0.08);
+    }
+    .compare-table thead th {
+      padding: 1rem 1.2rem; text-align: left;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .compare-table thead th:first-child { background: var(--navy); color: rgba(200,238,242,0.7); }
+    .compare-table thead th:nth-child(2) { background: #c0392b; color: white; }
+    .compare-table thead th:nth-child(3) { background: #0d9488; color: white; }
+    .compare-table tbody tr:nth-child(even) td { background: #f8fafb; }
+    .compare-table tbody tr:nth-child(odd) td { background: var(--white); }
+    .compare-table td {
+      padding: 0.85rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .compare-table td:first-child { font-weight: 600; color: var(--navy); }
+    .tick { color: #0d9488; font-weight: 700; }
+    .cross { color: #c0392b; font-weight: 700; }
+
+    /* ── COMPANY CARDS ── */
+    .company-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;
+      margin: 1.5rem 0;
+    }
+    .company-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 12px rgba(13,27,42,0.06);
+    }
+    .company-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem; text-transform: uppercase;
+      letter-spacing: 0.12em; color: var(--teal);
+      margin-bottom: 0.5rem;
+    }
+    .company-card h4 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem; color: var(--navy);
+      margin-bottom: 0.7rem;
+    }
+    .company-card ul {
+      font-size: 0.88rem; color: #3d3d55;
+      padding-left: 1rem; line-height: 1.7;
+    }
+
+    /* ── PROS / CONS ── */
+    .pros-cons {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .pros, .cons {
+      border-radius: 12px; padding: 1.4rem 1.5rem;
+    }
+    .pros { background: #e8f8f5; border: 1px solid #a7ddd3; }
+    .cons { background: #fff4e8; border: 1px solid #f4c894; }
+    .pros h4 { color: #00695c; font-size: 1rem; margin-bottom: 0.8rem; }
+    .cons h4 { color: #e65100; font-size: 1rem; margin-bottom: 0.8rem; }
+    .pros li, .cons li {
+      font-size: 0.88rem; line-height: 1.7;
+      color: #2d2d3e; padding: 0.2rem 0;
+    }
+    .pros ul, .cons ul { padding-left: 1.1rem; }
+
+    /* ── VIVA CARDS ── */
+    .viva-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.8rem;
+      margin-bottom: 1.2rem;
+      box-shadow: 0 2px 12px rgba(13,27,42,0.06);
+    }
+    .viva-q {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem; font-weight: 700;
+      color: var(--navy); margin-bottom: 1rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .viva-q::before {
+      content: 'Q';
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--teal); color: white;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; font-weight: 600;
+      margin-right: 0.6rem; vertical-align: middle;
+    }
+    .viva-a { font-size: 0.95rem; color: #3d3d55; line-height: 1.75; }
+
+    /* ── CONCLUSION BANNER ── */
+    .conclusion-banner {
+      background: var(--navy);
+      border-radius: 16px;
+      padding: 2.5rem;
+      text-align: center;
+      margin: 3rem 0;
+    }
+    .conclusion-banner h2 { color: var(--white); margin-bottom: 0.8rem; }
+    .conclusion-banner p { color: rgba(200,238,242,0.75); max-width: 540px; margin: 0 auto 1.5rem; }
+    .tag-list {
+      display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;
+    }
+    .tag {
+      background: rgba(27,154,170,0.2);
+      border: 1px solid rgba(27,154,170,0.35);
+      color: var(--teal-lt);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem; padding: 0.3rem 0.8rem;
+      border-radius: 100px; letter-spacing: 0.05em;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--navy);
+      padding: 2.5rem 2rem;
+      text-align: center;
+    }
+    footer p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem; color: rgba(200,238,242,0.4);
+      letter-spacing: 0.05em;
+    }
+    footer a { color: var(--teal); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reveal {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      .toc-card ol { grid-template-columns: 1fr; }
+      .epsilon-scale, .noise-steps { grid-template-columns: 1fr 1fr; }
+      .noise-steps { grid-template-columns: 1fr 1fr; }
+      .company-grid, .pros-cons { grid-template-columns: 1fr; }
+      .coin-flow { flex-direction: column; }
+      nav .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-brand" href="#">Privacy × Data Science</a>
+  <ul class="nav-links">
+    <li><a href="#what-is-dp">Concept</a></li>
+    <li><a href="#epsilon">Epsilon</a></li>
+    <li><a href="#real-world">Examples</a></li>
+    <li><a href="#comparison">Comparison</a></li>
+    <li><a href="#viva">Viva Q&A</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-tag">Data Science × Privacy Engineering</div>
+  <h1>Differential Privacy<br><span>in Data Mining</span></h1>
+  <p class="hero-subtitle">How mathematics gives us a formal promise to protect individuals while still extracting meaningful insights from data.</p>
+  <div class="hero-meta">
+    <span>✍️ <b>Technical Blog</b></span>
+    <span>📖 <b>~10 min read</b></span>
+    <span>🎯 <b>College Level</b></span>
+    <span>📅 <b>2025</b></span>
+  </div>
+</header>
+
+<!-- ARTICLE -->
+<main class="article">
+<div class="container">
+
+  <!-- TOC -->
+  <div class="toc-card reveal">
+    <h3>// Table of Contents</h3>
+    <ol>
+      <li><a href="#intro">Introduction</a></li>
+      <li><a href="#why-privacy">Why Privacy Matters</a></li>
+      <li><a href="#what-is-dp">What is Differential Privacy?</a></li>
+      <li><a href="#epsilon">The Epsilon Parameter</a></li>
+      <li><a href="#noise">How Noise is Added</a></li>
+      <li><a href="#real-world">Real-World Examples</a></li>
+      <li><a href="#pros-cons">Advantages & Disadvantages</a></li>
+      <li><a href="#comparison">Comparison Table</a></li>
+      <li><a href="#viva">Viva Questions</a></li>
+      <li><a href="#conclusion">Conclusion</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. INTRO -->
+  <section id="intro" class="reveal">
+    <h2>The Data Problem Nobody Wants to Talk About</h2>
+    <p>Every time you open an app, tap your phone's keyboard, or make a purchase online, a trace of you is recorded somewhere. That data is extraordinarily useful — it powers fraud detection, personalised medicine, smarter city infrastructure, and language models that can hold a conversation.</p>
+    <p>But there is a tension at the heart of modern data science that rarely gets the attention it deserves: <strong>the more you analyse data, the more you risk exposing the individuals behind it.</strong></p>
+    <p>For decades, organisations relied on vague promises — "we anonymise your data" — that turned out to be shockingly easy to break. Researchers demonstrated repeatedly that so-called anonymous datasets could be de-anonymised by cross-referencing with publicly available information. Medical records, Netflix ratings, location data — all "anonymised," all eventually re-identified.</p>
+
+    <div class="callout dark">
+      <div class="label">The Core Challenge</div>
+      <p>"We need data to be useful. We need individuals to be invisible. For a long time, we had no way to guarantee both simultaneously."</p>
+    </div>
+
+    <p>That changed in 2006, when computer scientist <strong>Cynthia Dwork</strong> and her colleagues formalised a concept that offered something genuinely new: not a promise, but a <em>proof</em>. That concept is <strong>Differential Privacy</strong>.</p>
+  </section>
+
+  <!-- 2. WHY PRIVACY -->
+  <section id="why-privacy" class="reveal">
+    <h2>Why Privacy is a First-Class Problem in Data Mining</h2>
+    <p>Data mining — the process of discovering patterns in large datasets — has become one of the most valuable capabilities in technology. Hospitals mine patient records to predict disease onset. Banks mine transaction logs to detect fraud. Retailers mine purchase histories to recommend products.</p>
+    <p>Each of these use cases is genuinely beneficial. And each one involves processing information that is deeply personal.</p>
+    <p>The consequences of getting privacy wrong are real and well-documented:</p>
+    <ul style="padding-left:1.4rem; margin-bottom:1.2rem; line-height:1.9;">
+      <li><strong>Data breaches</strong> — Facebook, Yahoo, Equifax, and the US healthcare system have all suffered catastrophic leaks affecting billions of people.</li>
+      <li><strong>Re-identification attacks</strong> — A landmark 2006 study showed that 87% of Americans could be uniquely identified using just three data points: zip code, birth date, and sex.</li>
+      <li><strong>Erosion of trust</strong> — Once users stop trusting a platform with their data, the entire value proposition collapses.</li>
+      <li><strong>Legal liability</strong> — GDPR in Europe and India's Digital Personal Data Protection (DPDP) Act now impose severe penalties on organisations that fail to protect user data.</li>
+    </ul>
+    <p>The old solution — removing names and obvious identifiers — is no longer sufficient. We need something with a mathematical backbone.</p>
+  </section>
+
+  <!-- 3. WHAT IS DP -->
+  <section id="what-is-dp" class="reveal">
+    <h2>What is Differential Privacy?</h2>
+    <p>At its core, Differential Privacy is a <strong>mathematical definition</strong> of what it means for an algorithm to be private. Rather than describing privacy as a property of the data (e.g., "names are removed"), it describes privacy as a property of the <em>computation</em> itself.</p>
+
+    <div class="callout blue">
+      <div class="label">Formal Definition (Plain English)</div>
+      <p>An algorithm is differentially private if the probability of any particular output changes by at most a small factor, regardless of whether any one individual's record is included in or excluded from the dataset.</p>
+    </div>
+
+    <p>In other words: an observer looking at the published result should not be able to tell — with any meaningful confidence — whether <em>your</em> specific data was part of the analysis. Your presence or absence is mathematically shielded.</p>
+
+    <h3>The Coin-Flip Analogy: Randomised Response</h3>
+    <p>The most intuitive way to understand DP is through a technique called <strong>Randomised Response</strong>, developed in the 1960s for sensitive surveys. Imagine researchers want to estimate what percentage of students have cheated in an exam — but students won't answer honestly out of fear.</p>
+    <p>The solution: before answering, each student flips a coin <em>in private</em>.</p>
+
+    <div class="analogy-box">
+      <div class="title-line">// Randomised Response — How it works</div>
+      <div class="coin-flow">
+        <div class="coin-step s1">
+          <div class="step-label">Step 1</div>
+          <strong>Flip coin secretly</strong><br>Nobody else sees the result
+        </div>
+        <div class="coin-step s2">
+          <div class="step-label">Step 2a — Heads</div>
+          <strong>Answer honestly</strong><br>"Yes, I cheated" / "No, I didn't"
+        </div>
+        <div class="coin-step s3">
+          <div class="step-label">Step 2b — Tails</div>
+          <strong>Always say "Yes"</strong><br>Regardless of truth
+        </div>
+        <div class="coin-step result">
+          <div class="step-label">Result</div>
+          <strong>Researcher deduces truth</strong> statistically — but no individual is exposed
+        </div>
+      </div>
+    </div>
+
+    <p>Because some "Yes" answers are forced by the coin, no individual "Yes" can be used against anyone — they have <strong>plausible deniability</strong>. Yet the researcher can mathematically correct for the noise and estimate the true proportion with reasonable accuracy.</p>
+    <p>This is, in essence, what all differentially private algorithms do: introduce controlled randomness that protects individuals while preserving the statistical utility of the aggregate result.</p>
+  </section>
+
+  <!-- 4. EPSILON -->
+  <section id="epsilon" class="reveal">
+    <h2>Understanding Epsilon — The Privacy Budget</h2>
+    <p>Every differentially private mechanism has a tuning parameter called <strong>epsilon (ε)</strong>. It quantifies the privacy guarantee: the smaller the epsilon, the stronger the privacy.</p>
+    <p>Think of epsilon as a <em>privacy budget</em>. You start with a budget, and every query you run against the data "spends" some of it. Once the budget is exhausted, releasing further information risks compromising individuals.</p>
+
+    <div class="epsilon-scale">
+      <div class="eps-card low">
+        <div class="eps-val">ε = 0.1</div>
+        <div class="eps-label">Very strong privacy protection. Results are noisier and less precise.</div>
+        <span class="eps-badge">High Privacy</span>
+      </div>
+      <div class="eps-card mid">
+        <div class="eps-val">ε = 1</div>
+        <div class="eps-label">Balanced trade-off. The sweet spot for many real-world deployments.</div>
+        <span class="eps-badge">Balanced</span>
+      </div>
+      <div class="eps-card high">
+        <div class="eps-val">ε = 10+</div>
+        <div class="eps-label">Very accurate results, but weaker privacy. Closer to publishing raw data.</div>
+        <span class="eps-badge">Low Privacy</span>
+      </div>
+    </div>
+
+    <p>There is no universal "right" value for epsilon — it depends on the sensitivity of the data, the purpose of the analysis, and the risk tolerance of the organisation. Google's RAPPOR uses values around 2–8. Apple has publicly stated they use single-digit epsilon values for most of their deployments.</p>
+
+    <div class="callout orange">
+      <div class="label">Key Insight</div>
+      <p><strong>The privacy-accuracy trade-off is fundamental and unavoidable.</strong> Any system that claims to provide both perfect privacy and perfect accuracy is not using Differential Privacy correctly — or at all.</p>
+    </div>
+  </section>
+
+  <!-- 5. NOISE -->
+  <section id="noise" class="reveal">
+    <h2>How Noise is Added — The Mechanism</h2>
+    <p>The technical mechanism behind Differential Privacy involves adding carefully calibrated random noise to query results. The most common noise distributions used are the <strong>Laplace mechanism</strong> (for numeric queries) and the <strong>Exponential mechanism</strong> (for categorical queries).</p>
+    <p>You don't need to understand the mathematics to grasp the idea. Here is the four-step process in plain terms:</p>
+
+    <div class="noise-steps">
+      <div class="noise-step">
+        <div class="ns-num">1</div>
+        <div class="ns-title">Collect Real Data</div>
+        <div class="ns-body">Survey 100 students. True average study hours = <strong>6.5 hrs/day</strong></div>
+      </div>
+      <div class="noise-step">
+        <div class="ns-num">2</div>
+        <div class="ns-title">Compute True Answer</div>
+        <div class="ns-body">Calculate the statistic you want to publish. Result: <strong>6.5 hours</strong></div>
+      </div>
+      <div class="noise-step">
+        <div class="ns-num">3</div>
+        <div class="ns-title">Add Calibrated Noise</div>
+        <div class="ns-body">Draw noise from Laplace distribution (scaled to ε). Add <strong>+0.3</strong> → 6.8 hrs</div>
+      </div>
+      <div class="noise-step">
+        <div class="ns-num">4</div>
+        <div class="ns-title">Publish Noisy Result</div>
+        <div class="ns-body">Release <strong>6.8 hours</strong>. Useful for research. No individual exposed.</div>
+      </div>
+    </div>
+
+    <p>The key insight is that the noise is <em>not</em> arbitrary — its magnitude is mathematically tied to the sensitivity of the query (how much one person's data can change the result) and the desired epsilon. This makes the privacy guarantee provable, not just plausible.</p>
+    <p>Modern DP libraries like <strong>Google's DP library</strong>, <strong>Apple's CrypTen</strong>, and <strong>OpenDP</strong> handle all of this automatically, making it increasingly accessible to engineers without deep statistical expertise.</p>
+  </section>
+
+  <!-- 6. REAL WORLD -->
+  <section id="real-world" class="reveal">
+    <h2>Real-World Deployments</h2>
+    <p>Differential Privacy has moved well beyond academia. Here are two of the most significant real-world deployments in the technology industry.</p>
+
+    <div class="company-grid">
+      <div class="company-card">
+        <div class="company-name">// Google — Since 2014</div>
+        <h4>Chrome RAPPOR</h4>
+        <ul>
+          <li>Deployed in the Chrome browser to understand browser configuration statistics</li>
+          <li>Each user's browser randomises its own data locally before transmitting</li>
+          <li>Google sees aggregate trends — not individual settings</li>
+          <li>First large-scale, production deployment of DP in industry</li>
+          <li>Open-sourced the RAPPOR codebase</li>
+        </ul>
+      </div>
+      <div class="company-card">
+        <div class="company-name">// Apple — Since iOS 10</div>
+        <h4>On-Device DP</h4>
+        <ul>
+          <li>Used for emoji frequency, QuickType suggestions, and Safari crash detection</li>
+          <li>Data is noised on your device before any transmission to Apple servers</li>
+          <li>Apple cannot reconstruct what any individual typed</li>
+          <li>Announced publicly at WWDC 2016 — a landmark moment for consumer privacy</li>
+          <li>Extended to Health and usage statistics in later iOS versions</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="label">Also Notable</div>
+      <p>The <strong>US Census Bureau</strong> applied Differential Privacy to the 2020 US Census — the first national census in history to use a formal privacy-preserving mechanism. This affects how demographic data is published for the entire country for the next decade.</p>
+    </div>
+
+    <p>These examples demonstrate something important: Differential Privacy is not a theoretical tool waiting for the right problem. It is already operating at planetary scale, protecting billions of individuals every day.</p>
+  </section>
+
+  <!-- 7. PROS CONS -->
+  <section id="pros-cons" class="reveal">
+    <h2>Advantages and Disadvantages</h2>
+    <p>Like every engineering approach, Differential Privacy involves real trade-offs. Here is an honest assessment:</p>
+
+    <div class="pros-cons">
+      <div class="pros">
+        <h4>✅ Advantages</h4>
+        <ul>
+          <li>Provides a <strong>mathematical, auditable guarantee</strong> — not just a policy promise</li>
+          <li>Protects against adversaries with background knowledge (unlike k-anonymity)</li>
+          <li>Enables safe publication of statistics about sensitive populations</li>
+          <li>Composable — multiple DP analyses can be combined with known privacy costs</li>
+          <li>Increasingly supported by regulatory frameworks worldwide</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h4>❌ Disadvantages</h4>
+        <ul>
+          <li>Noise reduces <strong>accuracy</strong>, especially for small datasets or rare subgroups</li>
+          <li>Choosing the right epsilon requires both statistical and domain expertise</li>
+          <li>Complex to implement correctly — subtle bugs can break the guarantee</li>
+          <li>Local DP (noise added on device) typically requires much more noise than central DP</li>
+          <li>Hard to explain to non-technical decision-makers and regulators</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. COMPARISON -->
+  <section id="comparison" class="reveal">
+    <h2>Side-by-Side Comparison</h2>
+    <p>How does data mining look with and without Differential Privacy? The differences are fundamental, not cosmetic.</p>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Normal Data Mining</th>
+          <th>With Differential Privacy</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Individual data exposed?</td>
+          <td><span class="cross">✗</span> Yes — raw data visible</td>
+          <td><span class="tick">✓</span> No — only noisy results</td>
+        </tr>
+        <tr>
+          <td>Privacy guarantee?</td>
+          <td><span class="cross">✗</span> None (policy only)</td>
+          <td><span class="tick">✓</span> Mathematical proof</td>
+        </tr>
+        <tr>
+          <td>Data accuracy?</td>
+          <td><span class="tick">✓</span> 100% accurate</td>
+          <td>⚠ Slightly reduced</td>
+        </tr>
+        <tr>
+          <td>Re-identification risk?</td>
+          <td><span class="cross">✗</span> High — well documented</td>
+          <td><span class="tick">✓</span> Protected by design</td>
+        </tr>
+        <tr>
+          <td>Regulatory compliance?</td>
+          <td>Uncertain / requires effort</td>
+          <td><span class="tick">✓</span> Strong foundation for GDPR/DPDP</td>
+        </tr>
+        <tr>
+          <td>Industry adoption?</td>
+          <td>Legacy systems</td>
+          <td><span class="tick">✓</span> Google, Apple, US Census</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 9. VIVA -->
+  <section id="viva" class="reveal">
+    <h2>Viva Preparation — Key Questions</h2>
+    <p>If you are presenting this topic for examination, here are two high-probability questions with model answers:</p>
+
+    <div class="viva-card">
+      <div class="viva-q">What is Differential Privacy and why is it considered superior to traditional anonymisation?</div>
+      <div class="viva-a">
+        <p>Differential Privacy is a mathematical framework that guarantees the output of any computation changes negligibly when any single individual's record is added to or removed from the dataset. This means an adversary examining the result cannot determine with confidence whether any specific person's data was included.</p>
+        <p>Traditional anonymisation — removing names, IDs, and obvious identifiers — has been repeatedly shown to be insufficient. Studies have demonstrated that individuals can be re-identified from "anonymised" datasets using background knowledge (e.g., knowing someone's approximate location, age, and gender). Differential Privacy is superior because it provides a <em>provable, quantifiable</em> guarantee rather than a heuristic one, and it is robust against adversaries with arbitrary background knowledge.</p>
+      </div>
+    </div>
+
+    <div class="viva-card">
+      <div class="viva-q">What is epsilon (ε) and what are the implications of choosing a very large value?</div>
+      <div class="viva-a">
+        <p>Epsilon (ε) is the privacy parameter of a differentially private mechanism. It quantifies the maximum amount of information that can be inferred about any individual from the published output. Formally, it bounds the ratio of output probabilities when any single record is changed.</p>
+        <p>When epsilon is small (e.g., 0.1), substantial noise is added, providing very strong privacy — but the published results are less accurate. When epsilon is large (e.g., 50 or ∞), very little noise is added, results are highly accurate, but individuals are essentially unprotected. In the extreme limit, a mechanism with ε → ∞ is equivalent to publishing the raw data.</p>
+        <p>Choosing epsilon is a domain-specific engineering decision. For sensitive data (medical, financial), small epsilon is appropriate. For lower-stakes applications, larger epsilon may be acceptable for accuracy reasons. The key is that this trade-off is now <em>explicit and measurable</em> — rather than implicit and unknown as in traditional data sharing.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. CONCLUSION -->
+  <section id="conclusion" class="reveal">
+    <h2>Conclusion</h2>
+    <p>Differential Privacy represents a fundamental shift in how we think about the relationship between data utility and individual rights. For most of computing history, privacy was treated as a feature — something you added on top, like encryption at rest or access controls. Differential Privacy treats it as a property of the algorithm itself.</p>
+    <p>The mathematics is elegant. The real-world impact is profound. And the timing is critical — as data collection accelerates and regulatory scrutiny intensifies, the demand for provably private systems will only grow.</p>
+    <p>Whether you are building a data pipeline, designing a machine learning system, or simply trying to understand the tools that govern modern digital life, Differential Privacy is a concept worth understanding deeply.</p>
+    <p>The next time an organisation tells you it protects your privacy, the right question is: <strong>"Is that a promise — or a proof?"</strong></p>
+
+    <div class="conclusion-banner">
+      <h2 style="font-size:1.6rem;">Key Takeaways</h2>
+      <p>Differential Privacy gives us mathematics-backed protection for individuals while preserving the statistical value of collective data analysis.</p>
+      <div class="tag-list">
+        <span class="tag">#DifferentialPrivacy</span>
+        <span class="tag">#DataMining</span>
+        <span class="tag">#PrivacyEngineering</span>
+        <span class="tag">#Epsilon</span>
+        <span class="tag">#DataScience</span>
+        <span class="tag">#GDPR</span>
+        <span class="tag">#MachineLearning</span>
+        <span class="tag">#Google</span>
+        <span class="tag">#Apple</span>
+        <span class="tag">#CynthiaDwork</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <p>Written as part of a college presentation on Privacy-Preserving Data Science &nbsp;·&nbsp; Built for GitHub Pages &nbsp;·&nbsp; <a href="#">Back to top ↑</a></p>
+</footer>
+
+<script>
+  // Progress bar
+  window.addEventListener('scroll', () => {
+    const el = document.getElementById('progress-bar');
+    const scrolled = window.scrollY;
+    const total = document.documentElement.scrollHeight - window.innerHeight;
+    el.style.width = (scrolled / total * 100) + '%';
+  });
+
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
