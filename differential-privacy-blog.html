@@ -1,717 +1,758 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Differential Privacy in Data Mining | Blog</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Differential Privacy in Data Warehouse & Mining</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --navy:    #0d1b2a;
-      --teal:    #1b9aaa;
-      --teal-lt: #c8eef2;
-      --accent:  #f4a261;
-      --cream:   #faf7f2;
-      --ink:     #1a1a2e;
-      --muted:   #6b7280;
-      --border:  #e5e7eb;
-      --white:   #ffffff;
-      --code-bg: #0d1b2a;
+      --navy:#0d1b2a; --teal:#1b9aaa; --teal-lt:#c8eef2;
+      --accent:#f4a261; --cream:#faf7f2; --ink:#1a1a2e;
+      --muted:#6b7280; --border:#e5e7eb; --white:#ffffff;
     }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{background:var(--cream);color:var(--ink);font-family:'Source Serif 4',Georgia,serif;font-size:18px;line-height:1.85;-webkit-font-smoothing:antialiased;}
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    #progress-bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--teal),var(--accent));width:0%;z-index:999;transition:width .1s linear;}
 
-    html { scroll-behavior: smooth; }
+    nav{position:sticky;top:0;z-index:100;background:rgba(250,247,242,0.93);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:.7rem 2rem;display:flex;align-items:center;justify-content:space-between;}
+    .nav-brand{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--navy);text-decoration:none;}
+    .nav-links{display:flex;gap:1.4rem;list-style:none;}
+    .nav-links a{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);text-decoration:none;font-family:'JetBrains Mono',monospace;transition:color .2s;}
+    .nav-links a:hover{color:var(--teal);}
 
-    body {
-      background: var(--cream);
-      color: var(--ink);
-      font-family: 'Source Serif 4', Georgia, serif;
-      font-size: 18px;
-      line-height: 1.8;
-      -webkit-font-smoothing: antialiased;
-    }
+    .hero{background:var(--navy);padding:5.5rem 2rem 4.5rem;text-align:center;position:relative;overflow:hidden;}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(27,154,170,.2) 0%,transparent 70%);pointer-events:none;}
+    .hero-tag{display:inline-block;background:rgba(27,154,170,.15);border:1px solid rgba(27,154,170,.4);color:var(--teal-lt);font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;padding:.35rem 1rem;border-radius:100px;margin-bottom:1.8rem;animation:fadeUp .6s ease both;}
+    .hero h1{font-family:'Playfair Display',serif;font-size:clamp(2.2rem,5.5vw,3.8rem);font-weight:900;color:#fff;line-height:1.1;letter-spacing:-.03em;max-width:800px;margin:0 auto 1.3rem;animation:fadeUp .6s .1s ease both;}
+    .hero h1 span{color:var(--teal);}
+    .hero-sub{font-size:1rem;color:rgba(200,238,242,.72);max-width:560px;margin:0 auto 2.2rem;font-style:italic;font-weight:300;animation:fadeUp .6s .2s ease both;}
+    .hero-meta{display:flex;gap:1.8rem;justify-content:center;flex-wrap:wrap;animation:fadeUp .6s .3s ease both;}
+    .hero-meta span{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:rgba(200,238,242,.5);letter-spacing:.05em;}
+    .hero-meta span b{color:rgba(200,238,242,.82);}
 
-    /* ── PROGRESS BAR ── */
-    #progress-bar {
-      position: fixed; top: 0; left: 0; height: 3px;
-      background: linear-gradient(90deg, var(--teal), var(--accent));
-      width: 0%; z-index: 999; transition: width 0.1s linear;
-    }
+    .container{max-width:800px;margin:0 auto;padding:0 1.5rem;}
 
-    /* ── NAV ── */
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(250,247,242,0.92);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border);
-      padding: 0.75rem 2rem;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .nav-brand {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.1rem; font-weight: 700;
-      color: var(--navy); text-decoration: none;
-      letter-spacing: -0.02em;
-    }
-    .nav-links { display: flex; gap: 1.5rem; list-style: none; }
-    .nav-links a {
-      font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em;
-      color: var(--muted); text-decoration: none; font-family: 'JetBrains Mono', monospace;
-      transition: color 0.2s;
-    }
-    .nav-links a:hover { color: var(--teal); }
+    .toc-card{background:#fff;border:1px solid var(--border);border-left:4px solid var(--teal);border-radius:0 12px 12px 0;padding:1.6rem 2rem;margin:3rem 0;}
+    .toc-card h3{font-family:'JetBrains Mono',monospace;font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--teal);margin-bottom:.9rem;}
+    .toc-card ol{padding-left:1.2rem;display:grid;grid-template-columns:1fr 1fr;gap:.28rem 2rem;}
+    .toc-card li{font-size:.88rem;}
+    .toc-card a{color:var(--ink);text-decoration:none;transition:color .2s;}
+    .toc-card a:hover{color:var(--teal);}
 
-    /* ── HERO ── */
-    .hero {
-      background: var(--navy);
-      padding: 6rem 2rem 5rem;
-      text-align: center;
-      position: relative; overflow: hidden;
-    }
-    .hero::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(27,154,170,0.18) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .hero-tag {
-      display: inline-block;
-      background: rgba(27,154,170,0.15);
-      border: 1px solid rgba(27,154,170,0.4);
-      color: var(--teal-lt);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem; letter-spacing: 0.15em;
-      text-transform: uppercase; padding: 0.35rem 1rem;
-      border-radius: 100px; margin-bottom: 2rem;
-      animation: fadeUp 0.6s ease both;
-    }
-    .hero h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2.4rem, 6vw, 4.2rem);
-      font-weight: 900;
-      color: var(--white);
-      line-height: 1.1;
-      letter-spacing: -0.03em;
-      max-width: 800px; margin: 0 auto 1.5rem;
-      animation: fadeUp 0.6s 0.1s ease both;
-    }
-    .hero h1 span { color: var(--teal); }
-    .hero-subtitle {
-      font-size: 1.1rem; color: rgba(200,238,242,0.75);
-      max-width: 580px; margin: 0 auto 2.5rem;
-      font-style: italic; font-weight: 300;
-      animation: fadeUp 0.6s 0.2s ease both;
-    }
-    .hero-meta {
-      display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;
-      animation: fadeUp 0.6s 0.3s ease both;
-    }
-    .hero-meta span {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem; color: rgba(200,238,242,0.55);
-      letter-spacing: 0.05em;
-    }
-    .hero-meta span b { color: rgba(200,238,242,0.85); }
+    .article{padding:1rem 0 5rem;}
+    section{margin-bottom:4rem;}
 
-    /* ── LAYOUT ── */
-    .container {
-      max-width: 760px;
-      margin: 0 auto;
-      padding: 0 1.5rem;
-    }
+    h2{font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3.5vw,2.1rem);font-weight:700;color:var(--navy);line-height:1.2;letter-spacing:-.02em;margin-bottom:1.1rem;scroll-margin-top:5rem;border-left:4px solid var(--teal);padding-left:.9rem;}
+    h3{font-family:'Source Serif 4',serif;font-size:1.15rem;font-weight:600;color:var(--navy);margin:1.8rem 0 .7rem;}
+    p{margin-bottom:1.15rem;color:#2d2d3e;}
+    strong{color:var(--navy);font-weight:600;}
+    ul,ol{padding-left:1.4rem;margin-bottom:1.2rem;line-height:1.9;color:#2d2d3e;}
+    a{color:var(--teal);}
 
-    /* ── TOC ── */
-    .toc-card {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-left: 4px solid var(--teal);
-      border-radius: 0 12px 12px 0;
-      padding: 1.8rem 2rem;
-      margin: 3.5rem 0;
-    }
-    .toc-card h3 {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem; text-transform: uppercase;
-      letter-spacing: 0.12em; color: var(--teal);
-      margin-bottom: 1rem;
-    }
-    .toc-card ol {
-      padding-left: 1.2rem;
-      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1.5rem;
-    }
-    .toc-card li { font-size: 0.9rem; }
-    .toc-card a { color: var(--ink); text-decoration: none; transition: color 0.2s; }
-    .toc-card a:hover { color: var(--teal); }
+    /* CALLOUT */
+    .callout{border-radius:10px;padding:1.3rem 1.6rem;margin:1.8rem 0;}
+    .callout.blue{background:#e8f7fa;border-left:4px solid var(--teal);}
+    .callout.orange{background:#fff4e8;border-left:4px solid var(--accent);}
+    .callout.dark{background:var(--navy);color:var(--teal-lt);border-left:4px solid var(--teal);}
+    .callout .lbl{font-family:'JetBrains Mono',monospace;font-size:.66rem;text-transform:uppercase;letter-spacing:.13em;margin-bottom:.5rem;opacity:.65;}
+    .callout.dark .lbl{color:var(--teal);opacity:1;}
+    .callout p{margin-bottom:0;font-size:.97rem;}
+    .callout.dark p{color:rgba(200,238,242,.85);}
 
-    /* ── ARTICLE SECTIONS ── */
-    .article { padding: 1rem 0 5rem; }
+    /* UPLOADED IMAGE */
+    .img-block{margin:2rem 0;border-radius:14px;overflow:hidden;box-shadow:0 6px 28px rgba(13,27,42,.13);border:1px solid var(--border);}
+    .img-block img{width:100%;display:block;}
+    .img-caption{background:#f0f4f8;padding:.7rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);letter-spacing:.05em;}
 
-    section { margin-bottom: 4rem; }
+    /* SVG diagrams */
+    .diagram-wrap{margin:2rem 0;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(13,27,42,.09);border:1px solid var(--border);background:#fff;}
+    .diagram-title{background:var(--navy);padding:.6rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--teal-lt);letter-spacing:.1em;text-transform:uppercase;}
+    .diagram-wrap svg{display:block;width:100%;height:auto;}
 
-    h2 {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(1.7rem, 3.5vw, 2.2rem);
-      font-weight: 700;
-      color: var(--navy);
-      line-height: 1.2;
-      letter-spacing: -0.02em;
-      margin-bottom: 1.2rem;
-      scroll-margin-top: 5rem;
-    }
-    h3 {
-      font-family: 'Source Serif 4', serif;
-      font-size: 1.2rem; font-weight: 600;
-      color: var(--navy); margin: 2rem 0 0.8rem;
-    }
+    /* WORKED EXAMPLE */
+    .worked-example{background:#fff;border:1px solid var(--border);border-radius:14px;margin:2rem 0;overflow:hidden;box-shadow:0 3px 16px rgba(13,27,42,.08);}
+    .we-header{background:var(--navy);padding:.9rem 1.4rem;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--teal-lt);letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:.6rem;}
+    .we-header .badge{background:var(--accent);color:var(--navy);padding:.15rem .5rem;border-radius:4px;font-weight:700;font-size:.68rem;}
+    .we-body{padding:1.4rem 1.6rem;}
+    .we-body p{font-size:.96rem;}
+    .step-row{display:flex;gap:1rem;align-items:flex-start;margin:.7rem 0;}
+    .step-num{min-width:28px;height:28px;border-radius:50%;background:var(--teal);color:#fff;font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:.1rem;flex-shrink:0;}
+    .step-text{font-size:.94rem;color:#2d2d3e;line-height:1.7;}
+    .math-box{background:#0d1b2a;color:#c8eef2;border-radius:8px;padding:.9rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:.88rem;margin:.8rem 0;line-height:1.9;}
+    .math-box .highlight{color:var(--accent);font-weight:700;}
+    .result-box{background:#e8f7fa;border:2px solid var(--teal);border-radius:8px;padding:.8rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:.9rem;color:var(--navy);margin-top:.8rem;text-align:center;font-weight:600;}
 
-    p { margin-bottom: 1.2rem; color: #2d2d3e; }
+    /* EPSILON TABLE */
+    .eps-table{width:100%;border-collapse:separate;border-spacing:0;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(13,27,42,.08);margin:1.5rem 0;font-size:.9rem;}
+    .eps-table th{padding:.85rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;text-align:center;}
+    .eps-table th:nth-child(1){background:#1a2a3a;color:#aaa;}
+    .eps-table th:nth-child(2){background:#00695c;color:#fff;}
+    .eps-table th:nth-child(3){background:#1b9aaa;color:#fff;}
+    .eps-table th:nth-child(4){background:#d35400;color:#fff;}
+    .eps-table td{padding:.8rem 1rem;border-bottom:1px solid #e5e7eb;text-align:center;background:#fff;}
+    .eps-table tr:last-child td{border-bottom:none;}
 
-    strong { color: var(--navy); font-weight: 600; }
-    em { color: var(--muted); }
+    /* COMPARE */
+    .compare-table{width:100%;border-collapse:separate;border-spacing:0;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(13,27,42,.08);margin:1.5rem 0;font-size:.88rem;}
+    .compare-table th{padding:.85rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.68rem;text-transform:uppercase;letter-spacing:.09em;}
+    .compare-table th:nth-child(1){background:var(--navy);color:rgba(200,238,242,.7);text-align:left;}
+    .compare-table th:nth-child(2){background:#c0392b;color:#fff;text-align:center;}
+    .compare-table th:nth-child(3){background:#0d9488;color:#fff;text-align:center;}
+    .compare-table td{padding:.8rem 1.1rem;border-bottom:1px solid #e5e7eb;background:#fff;}
+    .compare-table tr:nth-child(even) td{background:#f8fafb;}
+    .compare-table td:first-child{font-weight:600;color:var(--navy);}
+    .tick{color:#0d9488;font-weight:700;} .cross{color:#c0392b;font-weight:700;}
 
-    a { color: var(--teal); text-decoration: underline; text-decoration-thickness: 1px; }
-    a:hover { text-decoration-thickness: 2px; }
+    /* PROS CONS */
+    .pros-cons{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    .pros,.cons{border-radius:12px;padding:1.3rem 1.4rem;}
+    .pros{background:#e8f8f5;border:1px solid #a7ddd3;}
+    .cons{background:#fff4e8;border:1px solid #f4c894;}
+    .pros h4{color:#00695c;font-size:.97rem;margin-bottom:.7rem;}
+    .cons h4{color:#e65100;font-size:.97rem;margin-bottom:.7rem;}
+    .pros li,.cons li{font-size:.85rem;line-height:1.75;color:#2d2d3e;}
 
-    /* ── CALLOUT BOXES ── */
-    .callout {
-      border-radius: 12px;
-      padding: 1.5rem 1.8rem;
-      margin: 2rem 0;
-      position: relative;
-    }
-    .callout.blue {
-      background: #e8f7fa;
-      border-left: 4px solid var(--teal);
-    }
-    .callout.orange {
-      background: #fff4e8;
-      border-left: 4px solid var(--accent);
-    }
-    .callout.dark {
-      background: var(--navy);
-      color: var(--teal-lt);
-      border-left: 4px solid var(--teal);
-    }
-    .callout .label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.68rem; text-transform: uppercase;
-      letter-spacing: 0.14em; margin-bottom: 0.6rem;
-      opacity: 0.65;
-    }
-    .callout.dark .label { color: var(--teal); opacity: 1; }
-    .callout p { margin-bottom: 0; font-size: 1rem; }
-    .callout.dark p { color: rgba(200,238,242,0.85); }
+    /* COMPANY */
+    .company-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    .company-card{background:#fff;border:1px solid var(--border);border-radius:13px;padding:1.4rem;box-shadow:0 2px 10px rgba(13,27,42,.06);}
+    .co-tag{font-family:'JetBrains Mono',monospace;font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;color:var(--teal);margin-bottom:.4rem;}
+    .company-card h4{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--navy);margin-bottom:.6rem;}
+    .company-card ul{font-size:.85rem;color:#3d3d55;padding-left:1rem;line-height:1.75;}
 
-    /* ── ANALOGY VISUAL ── */
-    .analogy-box {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 2rem;
-      margin: 2rem 0;
-      box-shadow: 0 4px 24px rgba(13,27,42,0.07);
-    }
-    .analogy-box .title-line {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem; color: var(--teal);
-      text-transform: uppercase; letter-spacing: 0.14em;
-      margin-bottom: 1.2rem;
-    }
-    .coin-flow {
-      display: flex; align-items: stretch; gap: 0;
-      margin: 0.8rem 0;
-      border-radius: 10px; overflow: hidden;
-    }
-    .coin-step {
-      flex: 1; padding: 1rem 1.2rem; font-size: 0.9rem;
-    }
-    .coin-step .step-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.65rem; text-transform: uppercase;
-      letter-spacing: 0.1em; opacity: 0.6;
-      margin-bottom: 0.3rem;
-    }
-    .coin-step.s1 { background: #e8f7fa; }
-    .coin-step.s2 { background: #d1eff3; }
-    .coin-step.s3 { background: #bae7ed; }
-    .coin-step.result {
-      background: var(--navy); color: var(--teal-lt);
-      display: flex; flex-direction: column; justify-content: center;
-    }
-    .coin-step.result .step-label { color: var(--teal); opacity: 1; }
+    /* VIVA */
+    .viva-card{background:#fff;border:1px solid var(--border);border-radius:13px;padding:1.7rem;margin-bottom:1.1rem;box-shadow:0 2px 12px rgba(13,27,42,.06);}
+    .viva-q{font-family:'Playfair Display',serif;font-size:1.02rem;font-weight:700;color:var(--navy);margin-bottom:.9rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);}
+    .viva-q::before{content:'Q';display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--teal);color:#fff;font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;margin-right:.5rem;vertical-align:middle;}
+    .viva-a{font-size:.93rem;color:#3d3d55;line-height:1.78;}
 
-    /* ── EPSILON VISUAL ── */
-    .epsilon-scale {
-      display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
-      margin: 1.5rem 0;
-    }
-    .eps-card {
-      border-radius: 12px; padding: 1.2rem;
-      text-align: center; position: relative; overflow: hidden;
-    }
-    .eps-card.low  { background: #e0f5f0; border: 2px solid #00b894; }
-    .eps-card.mid  { background: #e8f7fa; border: 2px solid var(--teal); }
-    .eps-card.high { background: #fff1e0; border: 2px solid var(--accent); }
-    .eps-val {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.5rem; font-weight: 600;
-      color: var(--navy); margin-bottom: 0.4rem;
-    }
-    .eps-label { font-size: 0.82rem; color: var(--muted); }
-    .eps-badge {
-      display: inline-block;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.62rem; padding: 0.2rem 0.6rem;
-      border-radius: 100px; margin-top: 0.5rem;
-    }
-    .eps-card.low  .eps-badge { background: #00b894; color: white; }
-    .eps-card.mid  .eps-badge { background: var(--teal); color: white; }
-    .eps-card.high .eps-badge { background: var(--accent); color: white; }
+    /* CONCLUSION */
+    .conclusion-banner{background:var(--navy);border-radius:16px;padding:2.4rem;text-align:center;margin:3rem 0;}
+    .conclusion-banner h2{border:none;padding:0;color:#fff;margin-bottom:.7rem;}
+    .conclusion-banner p{color:rgba(200,238,242,.72);max-width:520px;margin:0 auto 1.4rem;font-size:.97rem;}
+    .tag-list{display:flex;flex-wrap:wrap;gap:.45rem;justify-content:center;}
+    .tag{background:rgba(27,154,170,.18);border:1px solid rgba(27,154,170,.35);color:var(--teal-lt);font-family:'JetBrains Mono',monospace;font-size:.67rem;padding:.25rem .7rem;border-radius:100px;letter-spacing:.05em;}
 
-    /* ── NOISE STEPS ── */
-    .noise-steps {
-      display: grid; grid-template-columns: repeat(4,1fr); gap: 0;
-      border-radius: 12px; overflow: hidden;
-      margin: 1.5rem 0;
-    }
-    .noise-step {
-      padding: 1.2rem 1rem; text-align: center;
-    }
-    .noise-step:nth-child(1) { background: #e8f7fa; }
-    .noise-step:nth-child(2) { background: #d0eff4; }
-    .noise-step:nth-child(3) { background: #b8e6ed; }
-    .noise-step:nth-child(4) { background: var(--navy); color: var(--teal-lt); }
-    .ns-num {
-      width: 28px; height: 28px; border-radius: 50%;
-      background: var(--teal); color: white;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem; font-weight: 600;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 0.6rem;
-    }
-    .noise-step:nth-child(4) .ns-num { background: var(--accent); }
-    .ns-title { font-size: 0.82rem; font-weight: 600; color: var(--navy); margin-bottom: 0.3rem; }
-    .noise-step:nth-child(4) .ns-title { color: var(--teal-lt); }
-    .ns-body { font-size: 0.78rem; color: var(--muted); }
-    .noise-step:nth-child(4) .ns-body { color: rgba(200,238,242,0.7); }
+    footer{background:var(--navy);padding:2.2rem 2rem;text-align:center;}
+    footer p{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:rgba(200,238,242,.38);letter-spacing:.05em;}
+    footer a{color:var(--teal);}
 
-    /* ── COMPARISON TABLE ── */
-    .compare-table {
-      width: 100%; border-collapse: separate; border-spacing: 0;
-      margin: 1.5rem 0; font-size: 0.9rem;
-      border-radius: 12px; overflow: hidden;
-      box-shadow: 0 2px 16px rgba(13,27,42,0.08);
-    }
-    .compare-table thead th {
-      padding: 1rem 1.2rem; text-align: left;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem; text-transform: uppercase;
-      letter-spacing: 0.1em;
-    }
-    .compare-table thead th:first-child { background: var(--navy); color: rgba(200,238,242,0.7); }
-    .compare-table thead th:nth-child(2) { background: #c0392b; color: white; }
-    .compare-table thead th:nth-child(3) { background: #0d9488; color: white; }
-    .compare-table tbody tr:nth-child(even) td { background: #f8fafb; }
-    .compare-table tbody tr:nth-child(odd) td { background: var(--white); }
-    .compare-table td {
-      padding: 0.85rem 1.2rem;
-      border-bottom: 1px solid var(--border);
-    }
-    .compare-table td:first-child { font-weight: 600; color: var(--navy); }
-    .tick { color: #0d9488; font-weight: 700; }
-    .cross { color: #c0392b; font-weight: 700; }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+    .reveal{opacity:0;transform:translateY(22px);transition:opacity .65s ease,transform .65s ease;}
+    .reveal.visible{opacity:1;transform:translateY(0);}
 
-    /* ── COMPANY CARDS ── */
-    .company-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;
-      margin: 1.5rem 0;
-    }
-    .company-card {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1.5rem;
-      box-shadow: 0 2px 12px rgba(13,27,42,0.06);
-    }
-    .company-name {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem; text-transform: uppercase;
-      letter-spacing: 0.12em; color: var(--teal);
-      margin-bottom: 0.5rem;
-    }
-    .company-card h4 {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.15rem; color: var(--navy);
-      margin-bottom: 0.7rem;
-    }
-    .company-card ul {
-      font-size: 0.88rem; color: #3d3d55;
-      padding-left: 1rem; line-height: 1.7;
-    }
-
-    /* ── PROS / CONS ── */
-    .pros-cons {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
-      margin: 1.5rem 0;
-    }
-    .pros, .cons {
-      border-radius: 12px; padding: 1.4rem 1.5rem;
-    }
-    .pros { background: #e8f8f5; border: 1px solid #a7ddd3; }
-    .cons { background: #fff4e8; border: 1px solid #f4c894; }
-    .pros h4 { color: #00695c; font-size: 1rem; margin-bottom: 0.8rem; }
-    .cons h4 { color: #e65100; font-size: 1rem; margin-bottom: 0.8rem; }
-    .pros li, .cons li {
-      font-size: 0.88rem; line-height: 1.7;
-      color: #2d2d3e; padding: 0.2rem 0;
-    }
-    .pros ul, .cons ul { padding-left: 1.1rem; }
-
-    /* ── VIVA CARDS ── */
-    .viva-card {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1.8rem;
-      margin-bottom: 1.2rem;
-      box-shadow: 0 2px 12px rgba(13,27,42,0.06);
-    }
-    .viva-q {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.05rem; font-weight: 700;
-      color: var(--navy); margin-bottom: 1rem;
-      padding-bottom: 0.8rem;
-      border-bottom: 1px solid var(--border);
-    }
-    .viva-q::before {
-      content: 'Q';
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 26px; height: 26px; border-radius: 50%;
-      background: var(--teal); color: white;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem; font-weight: 600;
-      margin-right: 0.6rem; vertical-align: middle;
-    }
-    .viva-a { font-size: 0.95rem; color: #3d3d55; line-height: 1.75; }
-
-    /* ── CONCLUSION BANNER ── */
-    .conclusion-banner {
-      background: var(--navy);
-      border-radius: 16px;
-      padding: 2.5rem;
-      text-align: center;
-      margin: 3rem 0;
-    }
-    .conclusion-banner h2 { color: var(--white); margin-bottom: 0.8rem; }
-    .conclusion-banner p { color: rgba(200,238,242,0.75); max-width: 540px; margin: 0 auto 1.5rem; }
-    .tag-list {
-      display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;
-    }
-    .tag {
-      background: rgba(27,154,170,0.2);
-      border: 1px solid rgba(27,154,170,0.35);
-      color: var(--teal-lt);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem; padding: 0.3rem 0.8rem;
-      border-radius: 100px; letter-spacing: 0.05em;
-    }
-
-    /* ── FOOTER ── */
-    footer {
-      background: var(--navy);
-      padding: 2.5rem 2rem;
-      text-align: center;
-    }
-    footer p {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem; color: rgba(200,238,242,0.4);
-      letter-spacing: 0.05em;
-    }
-    footer a { color: var(--teal); }
-
-    /* ── ANIMATIONS ── */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(18px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    .reveal {
-      opacity: 0; transform: translateY(24px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
-    }
-    .reveal.visible { opacity: 1; transform: translateY(0); }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 640px) {
-      .toc-card ol { grid-template-columns: 1fr; }
-      .epsilon-scale, .noise-steps { grid-template-columns: 1fr 1fr; }
-      .noise-steps { grid-template-columns: 1fr 1fr; }
-      .company-grid, .pros-cons { grid-template-columns: 1fr; }
-      .coin-flow { flex-direction: column; }
-      nav .nav-links { display: none; }
+    @media(max-width:640px){
+      .toc-card ol,.pros-cons,.company-grid{grid-template-columns:1fr;}
+      nav .nav-links{display:none;}
     }
   </style>
 </head>
 <body>
-
 <div id="progress-bar"></div>
 
-<!-- NAV -->
 <nav>
-  <a class="nav-brand" href="#">Privacy × Data Science</a>
+  <a class="nav-brand" href="#">DW&M · Differential Privacy</a>
   <ul class="nav-links">
-    <li><a href="#what-is-dp">Concept</a></li>
+    <li><a href="#intro">Intro</a></li>
+    <li><a href="#concept">Concept</a></li>
     <li><a href="#epsilon">Epsilon</a></li>
-    <li><a href="#real-world">Examples</a></li>
-    <li><a href="#comparison">Comparison</a></li>
+    <li><a href="#examples">Examples</a></li>
+    <li><a href="#real-world">Real World</a></li>
     <li><a href="#viva">Viva Q&A</a></li>
   </ul>
 </nav>
 
-<!-- HERO -->
 <header class="hero">
-  <div class="hero-tag">Data Science × Privacy Engineering</div>
-  <h1>Differential Privacy<br><span>in Data Mining</span></h1>
-  <p class="hero-subtitle">How mathematics gives us a formal promise to protect individuals while still extracting meaningful insights from data.</p>
+  <div class="hero-tag">Data Warehouse &amp; Mining — Unit Topic</div>
+  <h1>Differential Privacy<br><span>in Data Warehouse &amp; Mining</span></h1>
+  <p class="hero-sub">A complete, exam-ready guide with diagrams, worked numerical examples, real-world cases, and viva Q&amp;A.</p>
   <div class="hero-meta">
-    <span>✍️ <b>Technical Blog</b></span>
-    <span>📖 <b>~10 min read</b></span>
-    <span>🎯 <b>College Level</b></span>
-    <span>📅 <b>2025</b></span>
+    <span>📦 <b>Data Warehouse &amp; Mining</b></span>
+    <span>📖 <b>~15 min read</b></span>
+    <span>🎯 <b>Exam + Viva Ready</b></span>
+    <span>📊 <b>Diagrams + Sums Included</b></span>
   </div>
 </header>
 
-<!-- ARTICLE -->
 <main class="article">
 <div class="container">
 
-  <!-- TOC -->
   <div class="toc-card reveal">
     <h3>// Table of Contents</h3>
     <ol>
-      <li><a href="#intro">Introduction</a></li>
-      <li><a href="#why-privacy">Why Privacy Matters</a></li>
-      <li><a href="#what-is-dp">What is Differential Privacy?</a></li>
-      <li><a href="#epsilon">The Epsilon Parameter</a></li>
-      <li><a href="#noise">How Noise is Added</a></li>
-      <li><a href="#real-world">Real-World Examples</a></li>
-      <li><a href="#pros-cons">Advantages & Disadvantages</a></li>
+      <li><a href="#intro">Introduction &amp; Context</a></li>
+      <li><a href="#why-privacy">Why Privacy in Data Mining?</a></li>
+      <li><a href="#concept">What is Differential Privacy?</a></li>
+      <li><a href="#diagram-dp">Core DP Diagram (Visual)</a></li>
+      <li><a href="#epsilon">Epsilon — The Privacy Parameter</a></li>
+      <li><a href="#noise">How Noise is Added (Mechanism)</a></li>
+      <li><a href="#examples">Worked Numerical Examples</a></li>
+      <li><a href="#synthetic">Synthetic Data &amp; DP Training</a></li>
+      <li><a href="#real-world">Real-World Deployments</a></li>
+      <li><a href="#pros-cons">Advantages &amp; Disadvantages</a></li>
       <li><a href="#comparison">Comparison Table</a></li>
-      <li><a href="#viva">Viva Questions</a></li>
+      <li><a href="#viva">Viva Questions &amp; Answers</a></li>
       <li><a href="#conclusion">Conclusion</a></li>
     </ol>
   </div>
 
   <!-- 1. INTRO -->
   <section id="intro" class="reveal">
-    <h2>The Data Problem Nobody Wants to Talk About</h2>
-    <p>Every time you open an app, tap your phone's keyboard, or make a purchase online, a trace of you is recorded somewhere. That data is extraordinarily useful — it powers fraud detection, personalised medicine, smarter city infrastructure, and language models that can hold a conversation.</p>
-    <p>But there is a tension at the heart of modern data science that rarely gets the attention it deserves: <strong>the more you analyse data, the more you risk exposing the individuals behind it.</strong></p>
-    <p>For decades, organisations relied on vague promises — "we anonymise your data" — that turned out to be shockingly easy to break. Researchers demonstrated repeatedly that so-called anonymous datasets could be de-anonymised by cross-referencing with publicly available information. Medical records, Netflix ratings, location data — all "anonymised," all eventually re-identified.</p>
-
+    <h2>Introduction — Differential Privacy in Data Warehouse &amp; Mining</h2>
+    <p>A <strong>Data Warehouse</strong> is a centralised repository that stores large volumes of structured data collected from multiple sources — sales systems, hospital records, banking transactions, user behaviour logs — all integrated for analytical querying and reporting.</p>
+    <p><strong>Data Mining</strong> is the process of discovering hidden patterns, associations, and insights from this warehouse data using techniques such as classification, clustering, association rule mining, and regression.</p>
+    <p>But as organisations mine increasingly personal data — health records, financial histories, browsing patterns — a critical question arises: <strong>How do we extract meaningful insights without exposing individual records?</strong></p>
     <div class="callout dark">
-      <div class="label">The Core Challenge</div>
-      <p>"We need data to be useful. We need individuals to be invisible. For a long time, we had no way to guarantee both simultaneously."</p>
+      <div class="lbl">The Core Problem</div>
+      <p>Traditional data mining on a warehouse gives accurate results — but every query potentially leaks information about specific individuals. Published statistics, even aggregates, can be reverse-engineered to reveal private details. This is called a <strong>privacy attack</strong>.</p>
     </div>
-
-    <p>That changed in 2006, when computer scientist <strong>Cynthia Dwork</strong> and her colleagues formalised a concept that offered something genuinely new: not a promise, but a <em>proof</em>. That concept is <strong>Differential Privacy</strong>.</p>
+    <p>Differential Privacy (DP), first formalised by <strong>Cynthia Dwork in 2006</strong>, provides a mathematical solution: add carefully calibrated noise to query outputs so that no individual's data can be reliably inferred — while still preserving the overall statistical accuracy of the result.</p>
   </section>
 
   <!-- 2. WHY PRIVACY -->
   <section id="why-privacy" class="reveal">
-    <h2>Why Privacy is a First-Class Problem in Data Mining</h2>
-    <p>Data mining — the process of discovering patterns in large datasets — has become one of the most valuable capabilities in technology. Hospitals mine patient records to predict disease onset. Banks mine transaction logs to detect fraud. Retailers mine purchase histories to recommend products.</p>
-    <p>Each of these use cases is genuinely beneficial. And each one involves processing information that is deeply personal.</p>
-    <p>The consequences of getting privacy wrong are real and well-documented:</p>
-    <ul style="padding-left:1.4rem; margin-bottom:1.2rem; line-height:1.9;">
-      <li><strong>Data breaches</strong> — Facebook, Yahoo, Equifax, and the US healthcare system have all suffered catastrophic leaks affecting billions of people.</li>
-      <li><strong>Re-identification attacks</strong> — A landmark 2006 study showed that 87% of Americans could be uniquely identified using just three data points: zip code, birth date, and sex.</li>
-      <li><strong>Erosion of trust</strong> — Once users stop trusting a platform with their data, the entire value proposition collapses.</li>
-      <li><strong>Legal liability</strong> — GDPR in Europe and India's Digital Personal Data Protection (DPDP) Act now impose severe penalties on organisations that fail to protect user data.</li>
+    <h2>Why Privacy Matters in Data Mining</h2>
+    <p>When data is mined from a warehouse without privacy protection, several classes of attacks become possible:</p>
+    <ul>
+      <li><strong>Re-identification Attack:</strong> A 2006 study showed that 87% of US citizens could be uniquely identified from just three fields — zip code, date of birth, and gender — all commonly stored in data warehouses.</li>
+      <li><strong>Differencing Attack:</strong> Running two queries ("total salary of all employees" vs "total salary excluding Alice") reveals Alice's exact salary. A classic data warehouse vulnerability.</li>
+      <li><strong>Linkage Attack:</strong> Joining an "anonymised" warehouse table with a public dataset to re-identify individuals.</li>
     </ul>
-    <p>The old solution — removing names and obvious identifiers — is no longer sufficient. We need something with a mathematical backbone.</p>
+    <div class="callout orange">
+      <div class="lbl">Real Breach Example</div>
+      <p>The Netflix Prize dataset (2006) was released as "anonymised." Within weeks, researchers re-identified users by cross-referencing with public IMDb reviews — demonstrating that stripping names is not sufficient protection.</p>
+    </div>
+    <p>Differential Privacy directly addresses all three attack classes by providing a <em>mathematical guarantee</em> at the query output level — not just at the data storage level.</p>
   </section>
 
-  <!-- 3. WHAT IS DP -->
-  <section id="what-is-dp" class="reveal">
-    <h2>What is Differential Privacy?</h2>
-    <p>At its core, Differential Privacy is a <strong>mathematical definition</strong> of what it means for an algorithm to be private. Rather than describing privacy as a property of the data (e.g., "names are removed"), it describes privacy as a property of the <em>computation</em> itself.</p>
+  <!-- 3. CONCEPT -->
+  <section id="concept" class="reveal">
+    <h2>What is Differential Privacy? — Formal Definition</h2>
+    <p>A randomised algorithm <strong>M</strong> satisfies <strong>ε-Differential Privacy</strong> if, for any two datasets D and D' that differ by exactly one record, and for any possible output S:</p>
+    <div class="math-box">
+      Pr[M(D) ∈ S]  ≤  e<sup>ε</sup>  ×  Pr[M(D') ∈ S]
+    </div>
+    <p>In plain English: the probability of any output changes by at most a factor of e<sup>ε</sup>, whether or not any single individual's record is present. An observer cannot tell the difference between the two cases.</p>
 
-    <div class="callout blue">
-      <div class="label">Formal Definition (Plain English)</div>
-      <p>An algorithm is differentially private if the probability of any particular output changes by at most a small factor, regardless of whether any one individual's record is included in or excluded from the dataset.</p>
+    <h3>Simple Analogy — The Survey Coin Flip</h3>
+    <p>Imagine a data warehouse analyst wants to know how many employees in a company have a salary above ₹1,00,000. Instead of directly querying the warehouse, each employee uses randomised response:</p>
+    <ul>
+      <li>Flip a coin secretly.</li>
+      <li><strong>Heads →</strong> Answer truthfully (Yes/No).</li>
+      <li><strong>Tails →</strong> Always say "Yes."</li>
+    </ul>
+    <p>The analyst receives noisy answers, but can statistically correct for the coin bias and estimate the true count — while no individual answer can be trusted as ground truth. This is the essence of local differential privacy.</p>
+  </section>
+
+  <!-- DIAGRAM 1 — DP CORE CONCEPT (uploaded image 2) -->
+  <section id="diagram-dp" class="reveal">
+    <h2>Core DP Diagram — Database With and Without Your Data</h2>
+    <p>The following diagram illustrates the fundamental guarantee of Differential Privacy: whether your record is in the database or not, the function output looks essentially the same to any observer.</p>
+
+    <div class="img-block">
+      <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAG4AwIDASIAAhEBAxEB/8QAHQABAAICAwEBAAAAAAAAAAAAAAYHAQUDBAgJAv/EAFkQAAEDAwIDAwYIBg8GBAUFAAEAAgMEBREGEgchMRMiQRQyUWFxgQgVFjRCc5GxI1JicqHRFzNVVleCkpOUlaKywdLTJENEU4PCGDdUdSVjs8PhJnSj4vD/xAAcAQEAAQUBAQAAAAAAAAAAAAAAAQIDBAUGBwj/xABAEQACAQIEAwQJAgMHAwUAAAAAAQIDEQQFITESQVEGYXGBEzKRobHB0eHwFCIHI1IzNUKCkqKyNHLxFRYkYtL/2gAMAwEAAhEDEQA/AL7REW1LIREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBZb5w9qwst84e1AfPag+Y0/1TfuCJQfMaf6pv3BFqVsXj6EIiLbFkIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAst84e1YWW+cPagPntQfMaf6pv3BEoPmNP9U37gi1K2Lx9CERFtiyEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEWWguOGgk+paK96w0nZDI27altNHJGMuifVMMg/iAl2fcpSb2IN4irep45cM4dwbfKioc3wht83P2F7Wg/atNUfCI0PG/bHbdRzj8ZlJCB/amBVao1HyFy4UVTUHwgdAVBAnjvlHnqZqJpx/Ikct3bOMnDW4VAgi1RFA8/+qppoG/ynsDf0o6U1yFyfIunaLra7xEZbTcqK4Rjq6lqGSge3aThdxW9iQiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAst84e1YWW+cPagPntQfMaf6pv3BEoPmNP8AVN+4ItSti8fQhERbYshERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREBkAkgAEk9AFUfFLjfZtMVM9nsEEd7u8RLJXh+KWneOWHOHN7gerW+wuB5LsfCX1dX6Z0RBRWmofTVt4mdT9vG7a+KFrcyFp8HHLW5HMBziMEAryc1rWNDWgAAYACyqFBSXFIpbJZqziPrbVD3i66gqm07jnySkJggb6trTkj84u9qibWNb0aAfYsos1JJWRAREUkBERAfullmpJxUUk81LOOksEjo3j2OaQQrK0Zxv1xYJGRXCpZqChB70VacTAY6NmAyP4weqyRUyipbok9tcOde6e13bX1Vmn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" alt="Differential Privacy Core Concept — Database A with and without your data produce similar function outputs"/>
+      <div class="img-caption">📊 Figure 1 — DP Guarantee: Function(Database A) ≈ Function(Database A with your data). The outputs A and A' are indistinguishable.</div>
     </div>
 
-    <p>In other words: an observer looking at the published result should not be able to tell — with any meaningful confidence — whether <em>your</em> specific data was part of the analysis. Your presence or absence is mathematically shielded.</p>
+    <p>This diagram captures the mathematical heart of DP. The same analytical function is run on two versions of the data warehouse:</p>
+    <ul>
+      <li><strong>Database A</strong> — the warehouse without your record.</li>
+      <li><strong>Database A'</strong> — the warehouse with your record included.</li>
+    </ul>
+    <p>The outputs of both runs are <em>approximately equal</em> (≈). This means no attacker, seeing only the output, can determine whether your data was used. The controlled randomness (noise) makes the two outputs statistically indistinguishable.</p>
 
-    <h3>The Coin-Flip Analogy: Randomised Response</h3>
-    <p>The most intuitive way to understand DP is through a technique called <strong>Randomised Response</strong>, developed in the 1960s for sensitive surveys. Imagine researchers want to estimate what percentage of students have cheated in an exam — but students won't answer honestly out of fear.</p>
-    <p>The solution: before answering, each student flips a coin <em>in private</em>.</p>
-
-    <div class="analogy-box">
-      <div class="title-line">// Randomised Response — How it works</div>
-      <div class="coin-flow">
-        <div class="coin-step s1">
-          <div class="step-label">Step 1</div>
-          <strong>Flip coin secretly</strong><br>Nobody else sees the result
-        </div>
-        <div class="coin-step s2">
-          <div class="step-label">Step 2a — Heads</div>
-          <strong>Answer honestly</strong><br>"Yes, I cheated" / "No, I didn't"
-        </div>
-        <div class="coin-step s3">
-          <div class="step-label">Step 2b — Tails</div>
-          <strong>Always say "Yes"</strong><br>Regardless of truth
-        </div>
-        <div class="coin-step result">
-          <div class="step-label">Result</div>
-          <strong>Researcher deduces truth</strong> statistically — but no individual is exposed
-        </div>
-      </div>
+    <!-- MY OWN SVG: DP Pipeline in Data Warehouse context -->
+    <div class="diagram-wrap" style="margin-top:2rem;">
+      <div class="diagram-title">// Figure 2 — Differential Privacy Pipeline in a Data Warehouse</div>
+      <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono',monospace">
+        <!-- Background -->
+        <rect width="800" height="200" fill="#f8fafb"/>
+        <!-- Boxes -->
+        <!-- Box 1: Data Warehouse -->
+        <rect x="20" y="50" width="140" height="100" rx="10" fill="#0d1b2a"/>
+        <text x="90" y="90" text-anchor="middle" fill="#c8eef2" font-size="11" font-weight="bold">DATA</text>
+        <text x="90" y="106" text-anchor="middle" fill="#c8eef2" font-size="11" font-weight="bold">WAREHOUSE</text>
+        <text x="90" y="125" text-anchor="middle" fill="#1b9aaa" font-size="9">Raw Records</text>
+        <!-- Arrow 1 -->
+        <line x1="161" y1="100" x2="198" y2="100" stroke="#1b9aaa" stroke-width="2" marker-end="url(#arr)"/>
+        <!-- Box 2: Query Engine -->
+        <rect x="200" y="50" width="140" height="100" rx="10" fill="#1b4f72"/>
+        <text x="270" y="90" text-anchor="middle" fill="#c8eef2" font-size="11" font-weight="bold">QUERY</text>
+        <text x="270" y="106" text-anchor="middle" fill="#c8eef2" font-size="11" font-weight="bold">ENGINE</text>
+        <text x="270" y="125" text-anchor="middle" fill="#1b9aaa" font-size="9">True Answer</text>
+        <!-- Arrow 2 -->
+        <line x1="341" y1="100" x2="378" y2="100" stroke="#1b9aaa" stroke-width="2" marker-end="url(#arr)"/>
+        <!-- Box 3: DP Mechanism -->
+        <rect x="380" y="40" width="140" height="120" rx="10" fill="#1b9aaa"/>
+        <text x="450" y="82" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold">DP NOISE</text>
+        <text x="450" y="98" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold">MECHANISM</text>
+        <text x="450" y="116" text-anchor="middle" fill="#fff" font-size="9">Laplace / Gaussian</text>
+        <text x="450" y="130" text-anchor="middle" fill="#0d1b2a" font-size="9">controlled by ε</text>
+        <!-- Arrow 3 -->
+        <line x1="521" y1="100" x2="558" y2="100" stroke="#f4a261" stroke-width="2" marker-end="url(#arr2)"/>
+        <!-- Box 4: Noisy Output -->
+        <rect x="560" y="50" width="140" height="100" rx="10" fill="#f4a261"/>
+        <text x="630" y="90" text-anchor="middle" fill="#0d1b2a" font-size="11" font-weight="bold">NOISY</text>
+        <text x="630" y="106" text-anchor="middle" fill="#0d1b2a" font-size="11" font-weight="bold">OUTPUT</text>
+        <text x="630" y="125" text-anchor="middle" fill="#0d1b2a" font-size="9">Published Result</text>
+        <!-- Arrow 4 -->
+        <line x1="701" y1="100" x2="738" y2="100" stroke="#f4a261" stroke-width="2" marker-end="url(#arr2)"/>
+        <!-- Box 5: Analyst -->
+        <rect x="740" y="60" width="50" height="80" rx="8" fill="#e8f7fa"/>
+        <text x="765" y="95" text-anchor="middle" fill="#0d1b2a" font-size="10">Ana-</text>
+        <text x="765" y="110" text-anchor="middle" fill="#0d1b2a" font-size="10">lyst</text>
+        <!-- Label: privacy epsilon -->
+        <text x="450" y="178" text-anchor="middle" fill="#1b9aaa" font-size="10">← Privacy controlled by ε (epsilon) →</text>
+        <!-- Arrow marker -->
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#1b9aaa"/></marker>
+          <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f4a261"/></marker>
+        </defs>
+      </svg>
     </div>
-
-    <p>Because some "Yes" answers are forced by the coin, no individual "Yes" can be used against anyone — they have <strong>plausible deniability</strong>. Yet the researcher can mathematically correct for the noise and estimate the true proportion with reasonable accuracy.</p>
-    <p>This is, in essence, what all differentially private algorithms do: introduce controlled randomness that protects individuals while preserving the statistical utility of the aggregate result.</p>
   </section>
 
   <!-- 4. EPSILON -->
   <section id="epsilon" class="reveal">
-    <h2>Understanding Epsilon — The Privacy Budget</h2>
-    <p>Every differentially private mechanism has a tuning parameter called <strong>epsilon (ε)</strong>. It quantifies the privacy guarantee: the smaller the epsilon, the stronger the privacy.</p>
-    <p>Think of epsilon as a <em>privacy budget</em>. You start with a budget, and every query you run against the data "spends" some of it. Once the budget is exhausted, releasing further information risks compromising individuals.</p>
+    <h2>Epsilon (ε) — The Privacy Parameter</h2>
+    <p>Epsilon is the central control knob of every differentially private system. It directly governs the <strong>privacy-accuracy trade-off</strong>:</p>
+    <ul>
+      <li>A <strong>smaller ε</strong> → more noise added → stronger privacy, less accurate results.</li>
+      <li>A <strong>larger ε</strong> → less noise added → weaker privacy, more accurate results.</li>
+      <li>ε = 0 → perfect privacy (output is completely random, useless).</li>
+      <li>ε → ∞ → no privacy (equivalent to publishing raw data).</li>
+    </ul>
 
-    <div class="epsilon-scale">
-      <div class="eps-card low">
-        <div class="eps-val">ε = 0.1</div>
-        <div class="eps-label">Very strong privacy protection. Results are noisier and less precise.</div>
-        <span class="eps-badge">High Privacy</span>
-      </div>
-      <div class="eps-card mid">
-        <div class="eps-val">ε = 1</div>
-        <div class="eps-label">Balanced trade-off. The sweet spot for many real-world deployments.</div>
-        <span class="eps-badge">Balanced</span>
-      </div>
-      <div class="eps-card high">
-        <div class="eps-val">ε = 10+</div>
-        <div class="eps-label">Very accurate results, but weaker privacy. Closer to publishing raw data.</div>
-        <span class="eps-badge">Low Privacy</span>
-      </div>
+    <!-- MY OWN SVG: Epsilon Scale Visualisation -->
+    <div class="diagram-wrap">
+      <div class="diagram-title">// Figure 3 — Epsilon Scale: Privacy vs Accuracy Trade-off</div>
+      <svg viewBox="0 0 760 160" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono',monospace">
+        <rect width="760" height="160" fill="#f8fafb"/>
+        <!-- gradient bar -->
+        <defs>
+          <linearGradient id="eps-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#00897b"/>
+            <stop offset="50%" stop-color="#1b9aaa"/>
+            <stop offset="100%" stop-color="#f4a261"/>
+          </linearGradient>
+        </defs>
+        <rect x="60" y="70" width="640" height="22" rx="11" fill="url(#eps-grad)"/>
+        <!-- Labels top -->
+        <text x="60" y="60" text-anchor="middle" fill="#00897b" font-size="11" font-weight="bold">ε = 0</text>
+        <text x="380" y="60" text-anchor="middle" fill="#1b9aaa" font-size="11" font-weight="bold">ε = 1</text>
+        <text x="700" y="60" text-anchor="middle" fill="#d35400" font-size="11" font-weight="bold">ε = ∞</text>
+        <!-- ticks -->
+        <line x1="60" y1="63" x2="60" y2="70" stroke="#00897b" stroke-width="2"/>
+        <line x1="380" y1="63" x2="380" y2="70" stroke="#1b9aaa" stroke-width="2"/>
+        <line x1="700" y1="63" x2="700" y2="70" stroke="#d35400" stroke-width="2"/>
+        <!-- Labels bottom -->
+        <text x="60" y="112" text-anchor="middle" fill="#00897b" font-size="10">Perfect Privacy</text>
+        <text x="60" y="124" text-anchor="middle" fill="#777" font-size="9">(Useless data)</text>
+        <text x="380" y="112" text-anchor="middle" fill="#1b9aaa" font-size="10">Balanced Sweet Spot</text>
+        <text x="380" y="124" text-anchor="middle" fill="#777" font-size="9">(Used by Google, Apple)</text>
+        <text x="700" y="112" text-anchor="middle" fill="#d35400" font-size="10">No Privacy</text>
+        <text x="700" y="124" text-anchor="middle" fill="#777" font-size="9">(Raw data exposed)</text>
+        <!-- real-world markers -->
+        <circle cx="200" cy="81" r="7" fill="#fff" stroke="#00897b" stroke-width="2"/>
+        <text x="200" y="85" text-anchor="middle" fill="#00897b" font-size="8">0.1</text>
+        <circle cx="320" cy="81" r="7" fill="#fff" stroke="#1b9aaa" stroke-width="2"/>
+        <text x="320" y="85" text-anchor="middle" fill="#1b9aaa" font-size="8">0.5</text>
+        <circle cx="440" cy="81" r="7" fill="#fff" stroke="#1b9aaa" stroke-width="2"/>
+        <text x="440" y="85" text-anchor="middle" fill="#1b9aaa" font-size="8">2</text>
+        <circle cx="560" cy="81" r="7" fill="#fff" stroke="#d35400" stroke-width="2"/>
+        <text x="560" y="85" text-anchor="middle" fill="#d35400" font-size="8">8</text>
+        <!-- arrow labels -->
+        <text x="60" y="148" text-anchor="start" fill="#00897b" font-size="9">← HIGH PRIVACY / LOW ACCURACY</text>
+        <text x="700" y="148" text-anchor="end" fill="#d35400" font-size="9">HIGH ACCURACY / LOW PRIVACY →</text>
+      </svg>
     </div>
 
-    <p>There is no universal "right" value for epsilon — it depends on the sensitivity of the data, the purpose of the analysis, and the risk tolerance of the organisation. Google's RAPPOR uses values around 2–8. Apple has publicly stated they use single-digit epsilon values for most of their deployments.</p>
-
-    <div class="callout orange">
-      <div class="label">Key Insight</div>
-      <p><strong>The privacy-accuracy trade-off is fundamental and unavoidable.</strong> Any system that claims to provide both perfect privacy and perfect accuracy is not using Differential Privacy correctly — or at all.</p>
-    </div>
+    <table class="eps-table">
+      <thead>
+        <tr>
+          <th>ε Value</th>
+          <th>Privacy Level</th>
+          <th>Accuracy</th>
+          <th>Noise Added</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>0.01 – 0.1</td><td>Very High 🟢</td><td>Low</td><td>Very Large</td></tr>
+        <tr><td>0.5 – 1.0</td><td>High 🟡</td><td>Medium</td><td>Moderate</td></tr>
+        <tr><td>1 – 4</td><td>Balanced ⚖️</td><td>Good</td><td>Small</td></tr>
+        <tr><td>5 – 10</td><td>Low 🔴</td><td>High</td><td>Very Small</td></tr>
+        <tr><td>&gt; 10</td><td>Negligible ⚠️</td><td>Very High</td><td>Near Zero</td></tr>
+      </tbody>
+    </table>
   </section>
 
-  <!-- 5. NOISE -->
+  <!-- 5. NOISE MECHANISM -->
   <section id="noise" class="reveal">
-    <h2>How Noise is Added — The Mechanism</h2>
-    <p>The technical mechanism behind Differential Privacy involves adding carefully calibrated random noise to query results. The most common noise distributions used are the <strong>Laplace mechanism</strong> (for numeric queries) and the <strong>Exponential mechanism</strong> (for categorical queries).</p>
-    <p>You don't need to understand the mathematics to grasp the idea. Here is the four-step process in plain terms:</p>
-
-    <div class="noise-steps">
-      <div class="noise-step">
-        <div class="ns-num">1</div>
-        <div class="ns-title">Collect Real Data</div>
-        <div class="ns-body">Survey 100 students. True average study hours = <strong>6.5 hrs/day</strong></div>
-      </div>
-      <div class="noise-step">
-        <div class="ns-num">2</div>
-        <div class="ns-title">Compute True Answer</div>
-        <div class="ns-body">Calculate the statistic you want to publish. Result: <strong>6.5 hours</strong></div>
-      </div>
-      <div class="noise-step">
-        <div class="ns-num">3</div>
-        <div class="ns-title">Add Calibrated Noise</div>
-        <div class="ns-body">Draw noise from Laplace distribution (scaled to ε). Add <strong>+0.3</strong> → 6.8 hrs</div>
-      </div>
-      <div class="noise-step">
-        <div class="ns-num">4</div>
-        <div class="ns-title">Publish Noisy Result</div>
-        <div class="ns-body">Release <strong>6.8 hours</strong>. Useful for research. No individual exposed.</div>
-      </div>
+    <h2>How Noise is Added — The Laplace Mechanism</h2>
+    <p>The most widely used noise mechanism in Differential Privacy for numerical queries in data warehouses is the <strong>Laplace Mechanism</strong>. Noise is drawn from a Laplace distribution scaled to the <strong>sensitivity</strong> of the query divided by epsilon.</p>
+    <div class="math-box">
+      Noise  ~  Laplace(0,  Δf / ε)<br><br>
+      <span class="highlight">Δf</span> = Global Sensitivity = max change in query result when one record changes<br>
+      <span class="highlight">ε</span>  = Privacy parameter (chosen by system designer)<br>
+      <span class="highlight">b</span>  = Laplace scale = Δf / ε
     </div>
 
-    <p>The key insight is that the noise is <em>not</em> arbitrary — its magnitude is mathematically tied to the sensitivity of the query (how much one person's data can change the result) and the desired epsilon. This makes the privacy guarantee provable, not just plausible.</p>
-    <p>Modern DP libraries like <strong>Google's DP library</strong>, <strong>Apple's CrypTen</strong>, and <strong>OpenDP</strong> handle all of this automatically, making it increasingly accessible to engineers without deep statistical expertise.</p>
+    <!-- MY OWN SVG: Laplace Distribution Curve -->
+    <div class="diagram-wrap">
+      <div class="diagram-title">// Figure 4 — Laplace Distribution: Noise Probability Curve</div>
+      <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono',monospace">
+        <rect width="720" height="200" fill="#0d1b2a"/>
+        <!-- axes -->
+        <line x1="60" y1="170" x2="660" y2="170" stroke="#2a4a6a" stroke-width="1.5"/>
+        <line x1="360" y1="20" x2="360" y2="175" stroke="#2a4a6a" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <!-- x-axis labels -->
+        <text x="60" y="185" text-anchor="middle" fill="#4a7a9b" font-size="9">-4b</text>
+        <text x="160" y="185" text-anchor="middle" fill="#4a7a9b" font-size="9">-3b</text>
+        <text x="260" y="185" text-anchor="middle" fill="#4a7a9b" font-size="9">-b</text>
+        <text x="360" y="185" text-anchor="middle" fill="#1b9aaa" font-size="10" font-weight="bold">0</text>
+        <text x="460" y="185" text-anchor="middle" fill="#4a7a9b" font-size="9">b</text>
+        <text x="560" y="185" text-anchor="middle" fill="#4a7a9b" font-size="9">3b</text>
+        <text x="660" y="185" text-anchor="middle" fill="#4a7a9b" font-size="9">4b</text>
+        <!-- Laplace curve (piecewise approximation) -->
+        <polyline points="
+          60,168 80,167 100,165 120,161 140,155 160,146
+          180,134 200,120 220,105 240,90 260,75
+          280,62 300,50 320,38 340,29 360,24
+          380,29 400,38 420,50 440,62 460,75
+          480,90 500,105 520,120 540,134 560,146
+          580,155 600,161 620,165 640,167 660,168"
+          fill="none" stroke="#1b9aaa" stroke-width="2.5" stroke-linejoin="round"/>
+        <!-- Fill under curve -->
+        <polygon points="
+          60,170 60,168 80,167 100,165 120,161 140,155 160,146
+          180,134 200,120 220,105 240,90 260,75
+          280,62 300,50 320,38 340,29 360,24
+          380,29 400,38 420,50 440,62 460,75
+          480,90 500,105 520,120 540,134 560,146
+          580,155 600,161 620,165 640,167 660,168 660,170"
+          fill="rgba(27,154,170,0.15)"/>
+        <!-- center label -->
+        <text x="360" y="16" text-anchor="middle" fill="#f4a261" font-size="10" font-weight="bold">Peak: Most noise near zero</text>
+        <line x1="360" y1="19" x2="360" y2="24" stroke="#f4a261" stroke-width="1.5"/>
+        <!-- Annotations -->
+        <text x="190" y="50" fill="#c8eef2" font-size="9">Noise mostly small</text>
+        <text x="190" y="62" fill="#c8eef2" font-size="9">— centred at 0</text>
+        <text x="490" y="50" fill="#c8eef2" font-size="9">Larger noise is</text>
+        <text x="490" y="62" fill="#c8eef2" font-size="9">less probable</text>
+        <text x="360" y="196" text-anchor="middle" fill="#4a7a9b" font-size="8">Noise value added to query result</text>
+      </svg>
+    </div>
+    <p>The Laplace distribution is centred at zero, meaning most of the time the noise added is small. Large noise values are possible but increasingly unlikely. This is what keeps results <em>useful</em> while still providing the privacy guarantee.</p>
   </section>
 
-  <!-- 6. REAL WORLD -->
-  <section id="real-world" class="reveal">
-    <h2>Real-World Deployments</h2>
-    <p>Differential Privacy has moved well beyond academia. Here are two of the most significant real-world deployments in the technology industry.</p>
+  <!-- 6. WORKED EXAMPLES -->
+  <section id="examples" class="reveal">
+    <h2>Worked Numerical Examples</h2>
+    <p>These step-by-step examples show exactly how Differential Privacy is applied to real data warehouse queries. These are the type of problems asked in university exams.</p>
 
-    <div class="company-grid">
-      <div class="company-card">
-        <div class="company-name">// Google — Since 2014</div>
-        <h4>Chrome RAPPOR</h4>
-        <ul>
-          <li>Deployed in the Chrome browser to understand browser configuration statistics</li>
-          <li>Each user's browser randomises its own data locally before transmitting</li>
-          <li>Google sees aggregate trends — not individual settings</li>
-          <li>First large-scale, production deployment of DP in industry</li>
-          <li>Open-sourced the RAPPOR codebase</li>
-        </ul>
+    <!-- EXAMPLE 1 -->
+    <div class="worked-example">
+      <div class="we-header">
+        <span class="badge">Example 1</span>
+        Laplace Mechanism — Average Salary Query
       </div>
-      <div class="company-card">
-        <div class="company-name">// Apple — Since iOS 10</div>
-        <h4>On-Device DP</h4>
-        <ul>
-          <li>Used for emoji frequency, QuickType suggestions, and Safari crash detection</li>
-          <li>Data is noised on your device before any transmission to Apple servers</li>
-          <li>Apple cannot reconstruct what any individual typed</li>
-          <li>Announced publicly at WWDC 2016 — a landmark moment for consumer privacy</li>
-          <li>Extended to Health and usage statistics in later iOS versions</li>
-        </ul>
+      <div class="we-body">
+        <p><strong>Problem:</strong> A data warehouse stores employee salary records. An analyst wants to publish the <em>average salary</em> of all employees. Apply the Laplace mechanism with ε = 0.5. Assume salary range is ₹20,000 to ₹1,20,000.</p>
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-text"><strong>Identify the True Query Result:</strong><br>
+          Suppose the true average salary of 100 employees = <strong>₹65,000</strong></div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-text"><strong>Calculate Global Sensitivity (Δf):</strong><br>
+          Sensitivity = maximum change one employee can cause in the average.<br>
+          When one record changes from ₹20,000 to ₹1,20,000 in a group of 100:<br>
+          Δf = (₹1,20,000 − ₹20,000) / 100 = ₹1,000</div>
+        </div>
+
+        <div class="math-box">
+          Δf = (Max Salary − Min Salary) / n<br>
+          Δf = (1,20,000 − 20,000) / 100<br>
+          <span class="highlight">Δf = ₹1,000</span>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-text"><strong>Calculate Laplace Scale (b):</strong><br>
+          b = Δf / ε = 1,000 / 0.5 = <strong>2,000</strong></div>
+        </div>
+
+        <div class="math-box">
+          b = Δf / ε = 1,000 / 0.5<br>
+          <span class="highlight">b = 2,000</span>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-text"><strong>Sample Noise from Laplace(0, 2000):</strong><br>
+          Suppose the random noise drawn = <strong>+₹874</strong> (this is random each time)</div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-text"><strong>Add Noise to True Answer:</strong><br>
+          Published Result = True Answer + Noise = 65,000 + 874 = <strong>₹65,874</strong></div>
+        </div>
+
+        <div class="math-box">
+          Published Average = True Average + Laplace Noise<br>
+          = ₹65,000 + ₹874<br>
+          <span class="highlight">= ₹65,874</span> (This is what is released publicly)
+        </div>
+
+        <div class="result-box">
+          ✅ Result: ₹65,874 published | Individual salaries: PROTECTED | Utility: HIGH (error &lt; 1.5%)</div>
       </div>
     </div>
+
+    <!-- EXAMPLE 2 -->
+    <div class="worked-example">
+      <div class="we-header">
+        <span class="badge">Example 2</span>
+        COUNT Query — Number of Patients with Diabetes
+      </div>
+      <div class="we-body">
+        <p><strong>Problem:</strong> A hospital data warehouse is queried: "How many patients have been diagnosed with diabetes?" True count = 340 patients (out of 1,000). Apply DP with ε = 1.0.</p>
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-text"><strong>True Query Result:</strong> Count = <strong>340 patients</strong></div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-text"><strong>Global Sensitivity for COUNT query:</strong><br>
+          For a COUNT query, adding or removing one record changes the count by exactly 1.<br>
+          Therefore: <strong>Δf = 1</strong></div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-text"><strong>Laplace Scale:</strong><br>
+          b = Δf / ε = 1 / 1.0 = <strong>1</strong></div>
+        </div>
+
+        <div class="math-box">
+          b = 1 / 1.0 = <span class="highlight">1</span>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-text"><strong>Noise Sampled from Laplace(0, 1):</strong><br>
+          Suppose noise = <strong>+2.3</strong> → rounded to nearest integer = +2</div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-text"><strong>Published Result:</strong><br>
+          = 340 + 2 = <strong>342</strong></div>
+        </div>
+
+        <div class="math-box">
+          Published Count = True Count + Noise<br>
+          = 340 + 2<br>
+          <span class="highlight">= 342 patients</span>
+        </div>
+
+        <div class="result-box">✅ Result: 342 published | Each patient's record: PROTECTED | Error: 0.6% — Excellent accuracy</div>
+      </div>
+    </div>
+
+    <!-- EXAMPLE 3 -->
+    <div class="worked-example">
+      <div class="we-header">
+        <span class="badge">Example 3</span>
+        Differencing Attack — and How DP Stops It
+      </div>
+      <div class="we-body">
+        <p><strong>Problem:</strong> A data warehouse has 5 employees. An attacker runs two queries to find Alice's salary.</p>
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-text"><strong>Without DP (Vulnerable):</strong><br>
+          Q1: SUM of salaries of all 5 employees = ₹4,50,000<br>
+          Q2: SUM of salaries of 4 employees (excluding Alice) = ₹3,60,000<br>
+          <strong>Alice's salary = 4,50,000 − 3,60,000 = ₹90,000 ← LEAKED!</strong></div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-text"><strong>With DP (ε = 0.5, Δf = max salary / 1 = ₹1,20,000, b = 2,40,000):</strong></div>
+        </div>
+
+        <div class="math-box">
+          Q1 (true) = ₹4,50,000 → Add noise (+₹18,500) → Published: ₹4,68,500<br>
+          Q2 (true) = ₹3,60,000 → Add noise (−₹21,200) → Published: ₹3,38,800<br><br>
+          Attacker computes: 4,68,500 − 3,38,800 = <span class="highlight">₹1,29,700</span><br>
+          True Alice salary = ₹90,000 ← Attacker is off by ₹39,700. <span class="highlight">ATTACK FAILS ✅</span>
+        </div>
+
+        <div class="result-box">✅ Differencing attack defeated. Alice's real salary (₹90,000) cannot be recovered from the noisy outputs.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. SYNTHETIC DATA -->
+  <section id="synthetic" class="reveal">
+    <h2>Synthetic Data Generation with Differential Privacy</h2>
+    <p>One of the most powerful applications of DP in Data Warehouse &amp; Mining is <strong>synthetic data generation</strong>. Instead of sharing the real warehouse data with analysts, a differentially private <strong>synthesizer</strong> generates a fake dataset that has the same statistical properties — but contains no real records.</p>
+
+    <div class="img-block">
+      <img src="data:image/png;base64,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" alt="Differential Privacy Synthetic Data Generation — Add noise during training process"/>
+      <div class="img-caption">📊 Figure 5 — DP Synthetic Data Pipeline: Original data → DP Synthesizer (noise added during training) → Synthetic data → Analysis. No real individual's data leaves the warehouse.</div>
+    </div>
+
+    <p>The process shown in the diagram works as follows:</p>
+    <ol>
+      <li><strong>Original Data</strong> — Real warehouse records (e.g., patient records, salary data). A human icon indicates individual identities are attached.</li>
+      <li><strong>DP Synthesizer</strong> — A machine learning model (e.g., GAN, Bayesian network) is trained on the real data, but noise is added during training using DP-SGD (Differentially Private Stochastic Gradient Descent). The noise icon (orange waveform) represents this process.</li>
+      <li><strong>Synthetic Data</strong> — A new dataset is generated. The records look realistic and preserve statistical distributions — but correspond to no real person. The muted human icon indicates real identities are removed.</li>
+      <li><strong>Analysis &amp; Mining</strong> — Analysts can now run classification, clustering, or association rule mining on this synthetic data without any privacy risk.</li>
+    </ol>
 
     <div class="callout blue">
-      <div class="label">Also Notable</div>
-      <p>The <strong>US Census Bureau</strong> applied Differential Privacy to the 2020 US Census — the first national census in history to use a formal privacy-preserving mechanism. This affects how demographic data is published for the entire country for the next decade.</p>
+      <div class="lbl">Why This Matters for Data Warehouses</div>
+      <p>Many organisations cannot share their warehouse data with external data scientists due to regulatory reasons (GDPR, HIPAA). DP synthetic data solves this — the synthetic copy can be shared freely, because it provides no information about specific individuals, by mathematical guarantee.</p>
     </div>
-
-    <p>These examples demonstrate something important: Differential Privacy is not a theoretical tool waiting for the right problem. It is already operating at planetary scale, protecting billions of individuals every day.</p>
   </section>
 
-  <!-- 7. PROS CONS -->
+  <!-- MY OWN SVG: Association Rule Mining with DP -->
+  <section class="reveal">
+    <h2>Differential Privacy in Association Rule Mining</h2>
+    <p>Association rule mining (e.g., Apriori algorithm) is a core technique in Data Mining used to find frequent itemsets — for example, "customers who buy bread also buy butter." When applied to a data warehouse containing personal transactions, DP is applied to the support counts.</p>
+
+    <div class="diagram-wrap">
+      <div class="diagram-title">// Figure 6 — DP-Apriori: Noisy Support Counts in Association Rule Mining</div>
+      <svg viewBox="0 0 760 240" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono',monospace">
+        <rect width="760" height="240" fill="#f8fafb"/>
+        <!-- Header row -->
+        <rect x="20" y="15" width="720" height="28" rx="5" fill="#0d1b2a"/>
+        <text x="120" y="34" text-anchor="middle" fill="#c8eef2" font-size="10">ITEMSET</text>
+        <text x="280" y="34" text-anchor="middle" fill="#c8eef2" font-size="10">TRUE SUPPORT</text>
+        <text x="440" y="34" text-anchor="middle" fill="#1b9aaa" font-size="10">NOISE (Lap(0,1/ε))</text>
+        <text x="600" y="34" text-anchor="middle" fill="#f4a261" font-size="10">NOISY SUPPORT</text>
+        <text x="710" y="34" text-anchor="middle" fill="#c8eef2" font-size="10">PASS?</text>
+        <!-- Rows -->
+        <!-- Row data -->
+        <!-- itemset, true, noise, noisy, pass threshold 50 -->
+        <rect x="20" y="50" width="720" height="30" rx="0" fill="#fff"/>
+        <text x="120" y="70" text-anchor="middle" fill="#0d1b2a" font-size="10">{Bread, Butter}</text>
+        <text x="280" y="70" text-anchor="middle" fill="#0d1b2a" font-size="10">72</text>
+        <text x="440" y="70" text-anchor="middle" fill="#1b9aaa" font-size="10">+2.1 → +2</text>
+        <text x="600" y="70" text-anchor="middle" fill="#0d1b2a" font-size="10" font-weight="bold">74</text>
+        <text x="710" y="70" text-anchor="middle" fill="#00897b" font-size="11" font-weight="bold">✓</text>
+
+        <rect x="20" y="82" width="720" height="30" rx="0" fill="#f8fafb"/>
+        <text x="120" y="102" text-anchor="middle" fill="#0d1b2a" font-size="10">{Milk, Eggs}</text>
+        <text x="280" y="102" text-anchor="middle" fill="#0d1b2a" font-size="10">55</text>
+        <text x="440" y="102" text-anchor="middle" fill="#1b9aaa" font-size="10">−1.7 → −2</text>
+        <text x="600" y="102" text-anchor="middle" fill="#0d1b2a" font-size="10" font-weight="bold">53</text>
+        <text x="710" y="102" text-anchor="middle" fill="#00897b" font-size="11" font-weight="bold">✓</text>
+
+        <rect x="20" y="114" width="720" height="30" rx="0" fill="#fff"/>
+        <text x="120" y="134" text-anchor="middle" fill="#0d1b2a" font-size="10">{Beer, Diapers}</text>
+        <text x="280" y="134" text-anchor="middle" fill="#0d1b2a" font-size="10">48</text>
+        <text x="440" y="134" text-anchor="middle" fill="#1b9aaa" font-size="10">+3.4 → +3</text>
+        <text x="600" y="134" text-anchor="middle" fill="#0d1b2a" font-size="10" font-weight="bold">51</text>
+        <text x="710" y="134" text-anchor="middle" fill="#00897b" font-size="11" font-weight="bold">✓</text>
+
+        <rect x="20" y="146" width="720" height="30" rx="0" fill="#f8fafb"/>
+        <text x="120" y="166" text-anchor="middle" fill="#0d1b2a" font-size="10">{Coffee, Sugar}</text>
+        <text x="280" y="166" text-anchor="middle" fill="#0d1b2a" font-size="10">46</text>
+        <text x="440" y="166" text-anchor="middle" fill="#1b9aaa" font-size="10">−2.8 → −3</text>
+        <text x="600" y="166" text-anchor="middle" fill="#0d1b2a" font-size="10" font-weight="bold">43</text>
+        <text x="710" y="166" text-anchor="middle" fill="#c0392b" font-size="11" font-weight="bold">✗</text>
+
+        <rect x="20" y="178" width="720" height="30" rx="0" fill="#fff"/>
+        <text x="120" y="198" text-anchor="middle" fill="#0d1b2a" font-size="10">{Chips, Soda}</text>
+        <text x="280" y="198" text-anchor="middle" fill="#0d1b2a" font-size="10">38</text>
+        <text x="440" y="198" text-anchor="middle" fill="#1b9aaa" font-size="10">+0.9 → +1</text>
+        <text x="600" y="198" text-anchor="middle" fill="#0d1b2a" font-size="10" font-weight="bold">39</text>
+        <text x="710" y="198" text-anchor="middle" fill="#c0392b" font-size="11" font-weight="bold">✗</text>
+
+        <!-- legend -->
+        <rect x="20" y="218" width="720" height="18" rx="0" fill="#e8f7fa"/>
+        <text x="380" y="231" text-anchor="middle" fill="#1b9aaa" font-size="9">Min Support Threshold = 50 | ε = 1.0 | Δf = 1 | b = 1</text>
+      </svg>
+    </div>
+    <p>Notice that the itemset {Coffee, Sugar} with true support 46 passed the threshold after noise (+3) in a non-DP version — but here noise was −3, making it 43 which correctly falls below threshold. This demonstrates how noise occasionally affects which rules are discovered, but the <strong>most frequent patterns remain stable</strong>.</p>
+  </section>
+
+  <!-- 8. REAL WORLD -->
+  <section id="real-world" class="reveal">
+    <h2>Real-World Deployments</h2>
+    <div class="company-grid">
+      <div class="company-card">
+        <div class="co-tag">// Google — Since 2014</div>
+        <h4>Chrome RAPPOR</h4>
+        <ul>
+          <li>Used in the Chrome browser to understand configuration statistics</li>
+          <li>Each device randomises data locally (local DP) before transmission</li>
+          <li>Google sees trends — never individual settings</li>
+          <li>ε ≈ 2–4 used in production</li>
+          <li>Open-sourced the RAPPOR codebase for community use</li>
+        </ul>
+      </div>
+      <div class="company-card">
+        <div class="co-tag">// Apple — Since iOS 10</div>
+        <h4>On-Device DP</h4>
+        <ul>
+          <li>Applied to emoji frequency and QuickType keyboard learning</li>
+          <li>Noise added on your device — Apple servers never see raw keystrokes</li>
+          <li>ε values in single digits, publicly acknowledged at WWDC 2016</li>
+          <li>Extended to Health app and Safari crash reports in later iOS versions</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout blue">
+      <div class="lbl">US Census Bureau — 2020 Census</div>
+      <p>The US Census Bureau applied Differential Privacy to the 2020 national census — the first government census in history to use a formal DP mechanism. Demographic data published for the entire country was protected using DP, affecting policy decisions for the next decade.</p>
+    </div>
+  </section>
+
+  <!-- 9. PROS CONS -->
   <section id="pros-cons" class="reveal">
     <h2>Advantages and Disadvantages</h2>
-    <p>Like every engineering approach, Differential Privacy involves real trade-offs. Here is an honest assessment:</p>
-
     <div class="pros-cons">
       <div class="pros">
         <h4>✅ Advantages</h4>
         <ul>
-          <li>Provides a <strong>mathematical, auditable guarantee</strong> — not just a policy promise</li>
-          <li>Protects against adversaries with background knowledge (unlike k-anonymity)</li>
-          <li>Enables safe publication of statistics about sensitive populations</li>
-          <li>Composable — multiple DP analyses can be combined with known privacy costs</li>
-          <li>Increasingly supported by regulatory frameworks worldwide</li>
+          <li>Mathematical, provable privacy guarantee</li>
+          <li>Works against adversaries with background knowledge</li>
+          <li>Enables safe data warehouse sharing and publication</li>
+          <li>Composable — total privacy cost is trackable</li>
+          <li>Complies with GDPR, HIPAA, DPDP Act</li>
+          <li>Supports both local and central DP deployment models</li>
         </ul>
       </div>
       <div class="cons">
         <h4>❌ Disadvantages</h4>
         <ul>
-          <li>Noise reduces <strong>accuracy</strong>, especially for small datasets or rare subgroups</li>
-          <li>Choosing the right epsilon requires both statistical and domain expertise</li>
-          <li>Complex to implement correctly — subtle bugs can break the guarantee</li>
-          <li>Local DP (noise added on device) typically requires much more noise than central DP</li>
-          <li>Hard to explain to non-technical decision-makers and regulators</li>
+          <li>Noise reduces accuracy, especially for small datasets</li>
+          <li>Choosing the right ε requires expertise</li>
+          <li>Complex implementation — subtle errors break the guarantee</li>
+          <li>Local DP requires much more noise than central DP for same accuracy</li>
+          <li>Difficult to explain to non-technical management</li>
+          <li>Privacy budget degrades with each additional query</li>
         </ul>
       </div>
     </div>
   </section>
 
-  <!-- 8. COMPARISON -->
+  <!-- 10. COMPARISON -->
   <section id="comparison" class="reveal">
-    <h2>Side-by-Side Comparison</h2>
-    <p>How does data mining look with and without Differential Privacy? The differences are fundamental, not cosmetic.</p>
-
+    <h2>Comparison — Normal Mining vs DP Mining</h2>
     <table class="compare-table">
       <thead>
         <tr>
@@ -721,84 +762,75 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>Individual data exposed?</td>
-          <td><span class="cross">✗</span> Yes — raw data visible</td>
-          <td><span class="tick">✓</span> No — only noisy results</td>
-        </tr>
-        <tr>
-          <td>Privacy guarantee?</td>
-          <td><span class="cross">✗</span> None (policy only)</td>
-          <td><span class="tick">✓</span> Mathematical proof</td>
-        </tr>
-        <tr>
-          <td>Data accuracy?</td>
-          <td><span class="tick">✓</span> 100% accurate</td>
-          <td>⚠ Slightly reduced</td>
-        </tr>
-        <tr>
-          <td>Re-identification risk?</td>
-          <td><span class="cross">✗</span> High — well documented</td>
-          <td><span class="tick">✓</span> Protected by design</td>
-        </tr>
-        <tr>
-          <td>Regulatory compliance?</td>
-          <td>Uncertain / requires effort</td>
-          <td><span class="tick">✓</span> Strong foundation for GDPR/DPDP</td>
-        </tr>
-        <tr>
-          <td>Industry adoption?</td>
-          <td>Legacy systems</td>
-          <td><span class="tick">✓</span> Google, Apple, US Census</td>
-        </tr>
+        <tr><td>Individual data exposed?</td><td><span class="cross">✗</span> Yes — raw records used</td><td><span class="tick">✓</span> No — only noisy outputs</td></tr>
+        <tr><td>Privacy guarantee?</td><td><span class="cross">✗</span> None (policy only)</td><td><span class="tick">✓</span> Mathematical proof</td></tr>
+        <tr><td>Differencing attack?</td><td><span class="cross">✗</span> Vulnerable</td><td><span class="tick">✓</span> Protected</td></tr>
+        <tr><td>Re-identification risk?</td><td><span class="cross">✗</span> High</td><td><span class="tick">✓</span> Negligible by design</td></tr>
+        <tr><td>Data accuracy?</td><td><span class="tick">✓</span> 100% exact</td><td>⚠ Slightly reduced</td></tr>
+        <tr><td>Regulatory compliance?</td><td>Uncertain</td><td><span class="tick">✓</span> Strong (GDPR/DPDP)</td></tr>
+        <tr><td>Suitable for publishing?</td><td><span class="cross">✗</span> Risky</td><td><span class="tick">✓</span> Safe to publish</td></tr>
+        <tr><td>Used by industry?</td><td>Legacy systems</td><td><span class="tick">✓</span> Google, Apple, Census</td></tr>
       </tbody>
     </table>
   </section>
 
-  <!-- 9. VIVA -->
+  <!-- 11. VIVA -->
   <section id="viva" class="reveal">
-    <h2>Viva Preparation — Key Questions</h2>
-    <p>If you are presenting this topic for examination, here are two high-probability questions with model answers:</p>
+    <h2>Viva Questions &amp; Model Answers</h2>
 
     <div class="viva-card">
-      <div class="viva-q">What is Differential Privacy and why is it considered superior to traditional anonymisation?</div>
+      <div class="viva-q">Define Differential Privacy. How does it differ from traditional anonymisation?</div>
       <div class="viva-a">
-        <p>Differential Privacy is a mathematical framework that guarantees the output of any computation changes negligibly when any single individual's record is added to or removed from the dataset. This means an adversary examining the result cannot determine with confidence whether any specific person's data was included.</p>
-        <p>Traditional anonymisation — removing names, IDs, and obvious identifiers — has been repeatedly shown to be insufficient. Studies have demonstrated that individuals can be re-identified from "anonymised" datasets using background knowledge (e.g., knowing someone's approximate location, age, and gender). Differential Privacy is superior because it provides a <em>provable, quantifiable</em> guarantee rather than a heuristic one, and it is robust against adversaries with arbitrary background knowledge.</p>
+        <p>Differential Privacy is a mathematical framework that guarantees the output of any computation changes by at most a factor of e<sup>ε</sup> when any single individual's record is added to or removed from the dataset. This provides a formal, quantifiable, and provable privacy guarantee.</p>
+        <p>Traditional anonymisation merely removes identifiers (names, IDs) from data — a technique that has been repeatedly broken through re-identification attacks. DP is superior because it is robust even when the adversary has arbitrary background knowledge, and the guarantee is mathematical rather than heuristic.</p>
       </div>
     </div>
 
     <div class="viva-card">
-      <div class="viva-q">What is epsilon (ε) and what are the implications of choosing a very large value?</div>
+      <div class="viva-q">What is the Laplace mechanism and how is the noise scale calculated?</div>
       <div class="viva-a">
-        <p>Epsilon (ε) is the privacy parameter of a differentially private mechanism. It quantifies the maximum amount of information that can be inferred about any individual from the published output. Formally, it bounds the ratio of output probabilities when any single record is changed.</p>
-        <p>When epsilon is small (e.g., 0.1), substantial noise is added, providing very strong privacy — but the published results are less accurate. When epsilon is large (e.g., 50 or ∞), very little noise is added, results are highly accurate, but individuals are essentially unprotected. In the extreme limit, a mechanism with ε → ∞ is equivalent to publishing the raw data.</p>
-        <p>Choosing epsilon is a domain-specific engineering decision. For sensitive data (medical, financial), small epsilon is appropriate. For lower-stakes applications, larger epsilon may be acceptable for accuracy reasons. The key is that this trade-off is now <em>explicit and measurable</em> — rather than implicit and unknown as in traditional data sharing.</p>
+        <p>The Laplace mechanism adds noise drawn from a Laplace distribution to the true query result. The scale of this distribution is b = Δf / ε, where Δf is the global sensitivity (maximum change in the query result when one record changes) and ε is the privacy parameter.</p>
+        <p>For a COUNT query, Δf = 1. For a SUM or AVERAGE query, Δf depends on the range of values. A smaller ε means larger b, which means more noise and stronger privacy.</p>
+      </div>
+    </div>
+
+    <div class="viva-card">
+      <div class="viva-q">What is a differencing attack on a data warehouse, and how does DP prevent it?</div>
+      <div class="viva-a">
+        <p>A differencing attack occurs when an attacker runs two queries — one including a target individual and one excluding them — and subtracts the results to infer the individual's private value. For example: "Total salary of all employees" minus "Total salary excluding Alice" reveals Alice's exact salary.</p>
+        <p>Differential Privacy prevents this by adding independent noise to each query output. Since the noise is random and unpredictable, the subtraction yields a result that is far from the true individual value, making the attack ineffective. The mathematical guarantee ensures the attacker learns at most ε bits of information about any individual.</p>
+      </div>
+    </div>
+
+    <div class="viva-card">
+      <div class="viva-q">What is the privacy-accuracy trade-off in Differential Privacy? Give an example.</div>
+      <div class="viva-a">
+        <p>The privacy-accuracy trade-off is the fundamental tension in DP: stronger privacy (smaller ε) requires adding more noise, which reduces the accuracy of query results. Weaker privacy (larger ε) adds less noise, giving more accurate results but weaker individual protection.</p>
+        <p>Example: For a COUNT query with Δf=1, using ε=0.1 gives b=10 (large noise, ±10–20 typically). Using ε=10 gives b=0.1 (tiny noise, ±0.1–0.5 typically). For a hospital with 340 diabetes patients, ε=0.1 might publish "328" or "355" — still useful but imprecise. ε=10 would publish "340" or "341" — very accurate, but each individual patient is less protected.</p>
       </div>
     </div>
   </section>
 
-  <!-- 10. CONCLUSION -->
+  <!-- CONCLUSION -->
   <section id="conclusion" class="reveal">
     <h2>Conclusion</h2>
-    <p>Differential Privacy represents a fundamental shift in how we think about the relationship between data utility and individual rights. For most of computing history, privacy was treated as a feature — something you added on top, like encryption at rest or access controls. Differential Privacy treats it as a property of the algorithm itself.</p>
-    <p>The mathematics is elegant. The real-world impact is profound. And the timing is critical — as data collection accelerates and regulatory scrutiny intensifies, the demand for provably private systems will only grow.</p>
-    <p>Whether you are building a data pipeline, designing a machine learning system, or simply trying to understand the tools that govern modern digital life, Differential Privacy is a concept worth understanding deeply.</p>
-    <p>The next time an organisation tells you it protects your privacy, the right question is: <strong>"Is that a promise — or a proof?"</strong></p>
+    <p>Differential Privacy represents the most rigorous answer yet to one of data science's oldest and hardest problems: how do we learn from data without exposing the individuals who generated it?</p>
+    <p>In the context of <strong>Data Warehousing &amp; Mining</strong>, DP applies at every stage — from aggregate queries and association rule mining to synthetic data generation and classification model training. It transforms privacy from a vague policy commitment into a mathematical property of the system itself.</p>
+    <p>The key ideas to remember: the <strong>Laplace mechanism</strong> adds calibrated noise scaled to sensitivity and epsilon; <strong>epsilon</strong> is the privacy budget controlling the trade-off; and the <strong>fundamental guarantee</strong> is that no observer can reliably determine any individual's contribution from the published output.</p>
 
     <div class="conclusion-banner">
-      <h2 style="font-size:1.6rem;">Key Takeaways</h2>
-      <p>Differential Privacy gives us mathematics-backed protection for individuals while preserving the statistical value of collective data analysis.</p>
+      <h2>Key Takeaways</h2>
+      <p>DP gives us mathematics-backed protection — not just promises — while preserving the analytical power of data warehouse mining.</p>
       <div class="tag-list">
         <span class="tag">#DifferentialPrivacy</span>
+        <span class="tag">#DataWarehouse</span>
         <span class="tag">#DataMining</span>
-        <span class="tag">#PrivacyEngineering</span>
+        <span class="tag">#LaplaceMechanism</span>
         <span class="tag">#Epsilon</span>
-        <span class="tag">#DataScience</span>
+        <span class="tag">#AssociationRules</span>
+        <span class="tag">#SyntheticData</span>
         <span class="tag">#GDPR</span>
-        <span class="tag">#MachineLearning</span>
-        <span class="tag">#Google</span>
-        <span class="tag">#Apple</span>
+        <span class="tag">#PrivacyEngineering</span>
         <span class="tag">#CynthiaDwork</span>
       </div>
     </div>
@@ -807,31 +839,20 @@
 </div>
 </main>
 
-<!-- FOOTER -->
 <footer>
-  <p>Written as part of a college presentation on Privacy-Preserving Data Science &nbsp;·&nbsp; Built for GitHub Pages &nbsp;·&nbsp; <a href="#">Back to top ↑</a></p>
+  <p>Data Warehouse &amp; Mining — Differential Privacy Blog &nbsp;·&nbsp; GitHub Pages &nbsp;·&nbsp; <a href="#">↑ Back to top</a></p>
 </footer>
 
 <script>
-  // Progress bar
   window.addEventListener('scroll', () => {
     const el = document.getElementById('progress-bar');
-    const scrolled = window.scrollY;
-    const total = document.documentElement.scrollHeight - window.innerHeight;
-    el.style.width = (scrolled / total * 100) + '%';
+    const s = window.scrollY, t = document.documentElement.scrollHeight - window.innerHeight;
+    el.style.width = (s/t*100)+'%';
   });
-
-  // Scroll reveal
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('visible');
-        observer.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.08 });
-
-  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, {threshold:0.07});
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 </script>
 </body>
 </html>
